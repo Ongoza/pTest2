@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 //TODO
 // set numbers of objects for search
@@ -24,6 +26,7 @@ public class Main : MonoBehaviour
     private float distanceMax = 6f; // min distance from camera to an object
     private float distanceMin = 16.1f; // max distance from camera to an object
     private int numerSeletedObjects = 5; // number of objects for selection
+    private int initTestTime = 120; // time for test in sec
     // list of objects colors
     // {"gray","blue","green","red","yellow","purple","brown","black" }
     private Color[] arrColor = new Color[8]{
@@ -36,9 +39,19 @@ public class Main : MonoBehaviour
         new Color(139f / 255f, 69f / 255f, 19f / 255f, 1f),
         new Color(0f, 0f, 0f, 1f)
     };
+    private float defaultTime = 3f; // time in sec focus on an obj for select
     private int selectedColorIndex = 2; // index of selected objects color
 
     // Temperary variables
+    private GameObject rootMenu;
+    private GameObject rootCam;
+    private Material timedPointer;
+    private string curfocusObj = "";
+    private float workTime;
+    private bool isTimer=false; // display select cursor
+    private bool isTimerShow = false; // display test timer 
+
+    private float testTime;// test time left
     private Material primitivesMaterial;
     private GameObject objRoot;
     private int[] objCounter = new int[5] {0,0,0,0,0};    
@@ -46,17 +59,42 @@ public class Main : MonoBehaviour
     private float aStartH;
     private float aStartV;
     private float aStartR;
+    private Sprite uisprite; 
+    private Text timerText;
+    private GameObject camFade;
+    GameObject TimerCanvas;
+    EventSystem SceneEventSystem;
 
     // Start is called before the first frame update
     void Start()
     {
         objRoot = new GameObject("objRoot");
+        camFade = GameObject.Find("camProtector");
+        rootCam = GameObject.Find("rootCam");
+        GameObject ObjEventSystem = GameObject.Find("GvrEventSystem");
+        if (ObjEventSystem)
+        { SceneEventSystem = ObjEventSystem.GetComponent<EventSystem>();
+            if (SceneEventSystem) { SceneEventSystem.enabled = false; }
+        } else { Debug.Log("Can not find Event System");}
+
+        uisprite = UnityEditor.AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+        //Sprite uisprite = (Sprite) Resources.Load("UI/Skin/UISprite");
+        //Debug.Log(Data.getMessage("Intro"));
         primitivesMaterial = new Material(Shader.Find("Specular"));
+        GameObject camTimedPointer = GameObject.Find("GvrReticlePointer");        
+        timedPointer = camTimedPointer.GetComponent<Renderer>().material;
         nVer = nHor*2;
         aStartH = 2 * Mathf.PI / nHor;
         aStartV = 2 * Mathf.PI / nVer;
         aStartR = aStartH / 4f;
         CreateObjsArray();
+        
+        string msg = Data.getMessage("Intro");
+        //string msg = "This app allows to choose your future profession.\nPlease path the psychological test before.\n";
+        ShowMessage(msg,"test1");
+        //ShowTimer();
+        // StartCoroutine(fadeScene(2f, true, new Color(0.2f, 0.2f, 0.2f, 1), "Main"));
+        StartCoroutine(RotateCamera(2f, 0.0001f, "End rotation"));
     }
 
     // create objects koordinates list around the camera in random locations
@@ -168,7 +206,34 @@ public class Main : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
+        if (isTimer)
+        {
+            workTime -= Time.deltaTime;
+            if (workTime <= 0)
+            {
+                onClickTimed();
+               // addOevrlayInfo("Click!");
+            }
+            else
+            {
+                float percent = (1f - workTime / defaultTime) * 360;
+                timedPointer.SetFloat("_Angle", percent);
+                //Debug.Log("onUpdate =" + percent);
+            }
+        }
+        if (isTimerShow)
+        {
+            // show current time
+            testTime -= Time.deltaTime;
+            //Debug.Log("TestTime=" + testTime.ToString());
+            timerText.text = Mathf.Floor(testTime).ToString();
+            if (testTime<0) {
+                isTimerShow = false;
+                if (TimerCanvas) { 
+                    Destroy(TimerCanvas);
+                }
+            }
+        }
     }
 
 
@@ -255,4 +320,241 @@ public class Main : MonoBehaviour
         mF.sharedMesh = mesh;
     }
 
+    private void ShowMessage(string msg, string action)
+    {
+        rootMenu = new GameObject("rootMenu");
+        rootMenu.transform.position = new Vector3(0, 1, 12);        
+        GameObject newCanvas = new GameObject("CnvsMainMenu");        
+        Canvas c = newCanvas.AddComponent<Canvas>();
+        c.renderMode = RenderMode.WorldSpace;
+        newCanvas.transform.SetParent(rootMenu.transform);
+        newCanvas.AddComponent<CanvasScaler>();
+        newCanvas.AddComponent<GvrPointerGraphicRaycaster>();
+        RectTransform NewCanvasRect = newCanvas.GetComponent<RectTransform>();
+        NewCanvasRect.sizeDelta = new Vector2(400, 100);
+        NewCanvasRect.localScale = new Vector3(0.07f, 0.07f, 1f);
+        NewCanvasRect.localPosition = new Vector3(0, 0, 0);
+        GameObject panel = new GameObject("Panel");
+        panel.AddComponent<CanvasRenderer>();
+        Image i = panel.AddComponent<Image>();
+        i.color = new Vector4(1, 1, 1, 0.7f);
+        i.sprite = uisprite;
+        i.type = Image.Type.Sliced;
+        RectTransform panelTransform = panel.GetComponent<RectTransform>();
+        panel.transform.SetParent(NewCanvasRect, true);
+        panelTransform.localScale = new Vector3(0.2f, 0.2f, 1f);
+        panelTransform.localPosition = new Vector3(0, 0, 0);
+        panelTransform.sizeDelta = new Vector2(1200, 300);
+        //panelTransform.rotation = Quaternion.AngleAxis(-180, Vector3.up);
+
+        CreateText(panelTransform, 0, 16, 1200, 300, msg, 50, 0, TextAnchor.MiddleCenter);
+        GameObject bt0 = new GameObject("btnTest");
+        RectTransform br = bt0.AddComponent<RectTransform>();
+        br.sizeDelta = new Vector2(300, 60);
+        Image img = bt0.AddComponent<Image>();        
+        img.sprite = uisprite;
+        img.color = new Vector4(0.5f, 0.5f, 0.8f, 1);
+        //img.material.color = new Vector4(1f, 1f, 1f, 0.7f);
+        img.type = Image.Type.Sliced;
+        Button bt = bt0.AddComponent<Button>();
+        bt0.transform.SetParent(panelTransform, true);
+        bt0.transform.localPosition = new Vector3(33, -80, 0);
+        //bt0.transform.rotation = Quaternion.AngleAxis(-180, Vector3.up);
+        bt0.transform.localScale = new Vector3(1, 1, 1);
+        CreateText(bt.transform, 0, 0, 300, 50, "Start", 40, 1, TextAnchor.MiddleCenter);
+        bt.onClick.AddListener(onClickTimed);
+        EventTrigger be = bt0.AddComponent<EventTrigger>();
+        EventTrigger.Entry entryEnterGaze = new EventTrigger.Entry();
+        entryEnterGaze.eventID = EventTriggerType.PointerEnter;
+        entryEnterGaze.callback.AddListener((eventData) => { onEnterTimed(action); });
+        be.triggers.Add(entryEnterGaze);
+        EventTrigger.Entry entryExitGaze = new EventTrigger.Entry();
+        entryExitGaze.eventID = EventTriggerType.PointerExit;
+        entryExitGaze.callback.AddListener((eventData) => { onExitTimed(); });
+        be.triggers.Add(entryExitGaze);
+
+       // showTutorialsMenu(rootMenu);
+    }
+
+    private GameObject CreateText(Transform parent, float x, float y, float w, float h, string message, int fontSize, int fontStyle, TextAnchor achor)
+    {
+        GameObject textObject = new GameObject("Text");
+        textObject.transform.SetParent(parent);
+        RectTransform trans = textObject.AddComponent<RectTransform>();
+        trans.sizeDelta = new Vector2(w, h);
+        trans.anchoredPosition3D = new Vector3(0, 0, 0);
+        trans.anchoredPosition = new Vector2(x, y);
+        //trans.transform.rotation = Quaternion.AngleAxis(-180, Vector3.up);
+        trans.localScale = new Vector3(1.0f, 1.0f, 0f);
+        trans.localPosition.Set(0, 0, 0);
+        textObject.AddComponent<CanvasRenderer>();
+        Text text = textObject.AddComponent<Text>();
+        text.supportRichText = true;
+        text.text = message;
+        text.fontSize = fontSize;
+        if (fontStyle == 1) { text.fontStyle = FontStyle.Bold; }
+        text.font = Resources.GetBuiltinResource(typeof(Font), "Arial.ttf") as Font;
+        text.alignment = achor;
+        //text.alignment = TextAnchor.MiddleCenter;
+        //text.horizontalOverflow = HorizontalWrapMode.Overflow;
+        text.color = new Color(0, 0, 0);
+        return textObject;
+    }
+
+    public void onEnterTimed(string name)
+    {
+        isTimer = true;
+        workTime = defaultTime;
+        timedPointer.SetFloat("_Angle", 0);
+        curfocusObj = name;
+    }
+    public void onExitTimed()
+    {
+        isTimer = false;
+        curfocusObj = "";
+        workTime = defaultTime;
+        timedPointer.SetFloat("_Angle", 360);
+    }
+
+    private void onClickTimed()
+    {
+        clickSelectEvent(curfocusObj);
+    }
+
+    private void clickSelectEvent(string name)
+    {
+        onExitTimed();
+        //addOevrlayInfo("clickSelectEvent" + name);
+        Debug.Log("clickSelectEvent=" + name + "=");
+        switch (name)
+        {
+            case "test":
+                Color color = new Color(0.2f, 0.2f, 0.2f, 0f);
+                //StartCoroutine(fadeScene(0.5f, false, color, "colorTest"));
+                break;
+            case "btnModel":
+                Debug.Log("clickSelectEvent 2 =" + name + "=");
+                Destroy(rootMenu);
+                //showTutorialContent(name);
+                break;
+            case "btnToMain":
+                Debug.Log("clickSelectEvent 3 =" + name + "=");                                
+                //Destroy(rootMenu);
+                //ShowMainMenu();
+                break;
+            case "Part_1":
+                //globalData.setCurVideoName(0);
+                //tryStartVideo();
+                break;            
+            default:
+                Debug.Log("clickSelectEvent not found action for " + name);
+                break;
+        }
+    }
+
+    private void ShowTimer()
+    {
+        TimerCanvas = new GameObject("Timer");
+        Canvas c = TimerCanvas.AddComponent<Canvas>();
+        c.renderMode = RenderMode.WorldSpace;
+        TimerCanvas.AddComponent<CanvasScaler>();
+        RectTransform NewCanvasRect = TimerCanvas.GetComponent<RectTransform>();
+        //NewCanvasRect.Rotate(120,40,0);
+        //NewCanvasRect.localRotation = Quaternion.Euler(0, 180, 0);
+        TimerCanvas.transform.SetParent(Camera.main.transform, true);
+        NewCanvasRect.localPosition = new Vector3(0, 5f, 10);
+        NewCanvasRect.sizeDelta = new Vector2(200, 20);
+        NewCanvasRect.localScale = new Vector3(0.1f, 0.1f, 1f);
+        GameObject panel = new GameObject("TimerPanel");
+        panel.AddComponent<CanvasRenderer>();
+        Image i = panel.AddComponent<Image>();
+        i.sprite = uisprite;
+        i.type = Image.Type.Sliced;
+        i.color = new Vector4(1f, 1f, 1f, 1f);
+        RectTransform panelTransform = panel.GetComponent<RectTransform>();
+        panel.transform.SetParent(NewCanvasRect, true);
+        panelTransform.localScale = new Vector3(0.3f, 0.3f, 1f);
+        panelTransform.localRotation = Quaternion.AngleAxis(0, Vector3.right);
+        panelTransform.localPosition = new Vector3(0, 0, 0);
+        panelTransform.sizeDelta = new Vector2(30, 20);
+        testTime = initTestTime;        
+        GameObject txtObj = CreateText(panelTransform, 0, 0, 30, 20, testTime.ToString(), 12, 0, TextAnchor.MiddleCenter);
+        txtObj.transform.localRotation = Quaternion.AngleAxis(0, Vector3.right);
+        timerText = txtObj.GetComponent<Text>();
+        //overlayText.color = new Color(0, 0.8f, 0);
+        isTimerShow = true;
+    }
+    IEnumerator fadeScene(float duration, bool startNewScene, Color color, string sceneName)
+    {
+        if (camFade) { 
+            //GameObject camFade = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            camFade.GetComponent<Renderer>().enabled = true;
+            //Debug.Log("Start fade scene " + color);
+            float startTransparent = 0f;
+            float endTransparent = 1f;
+            float smoothness = 0.05f;
+            float progress = 0;
+            float increment = smoothness / duration; //The amount of change to apply.
+            if (startNewScene == true)
+            {
+                startTransparent = 1f;
+                endTransparent = 0f;
+            }
+            Color colorStart = new Color(color.r, color.g, color.b, startTransparent);
+            camFade.GetComponent<Renderer>().materials[0].color = colorStart;
+            Color colorEnd = new Color(colorStart.r, colorStart.g, colorStart.b, endTransparent);
+            while (progress < 1)
+            {
+                progress += increment;
+                //Debug.Log(progress);
+                camFade.GetComponent<Renderer>().materials[0].color = Color.Lerp(colorStart, colorEnd, progress);
+                yield return new WaitForSeconds(smoothness);
+            }
+            yield return null;
+            if (startNewScene == true)
+            {
+                Debug.Log("Start scene " + sceneName+" tr="+ startNewScene);
+                camFade.GetComponent<Renderer>().enabled = false;
+                if (SceneEventSystem) { SceneEventSystem.enabled = true; }
+            }
+            else
+            {
+                Debug.Log("Start scene " + sceneName + " tr=" + startNewScene);
+                
+                //UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
+            }
+        }
+        else
+        {
+            Debug.Log("Can not find camFade object");
+        }
+    }
+
+    IEnumerator RotateCamera(float duration, float speedUp, string newAction)
+    {
+        Transform camTransform = rootCam.transform;            
+        float progress = 300;
+        float smooth = 0.0001f; 
+        if (speedUp < 0) { smooth = 0.05f; }
+        float angleDelta = 1f;
+        float newAngle = 0f;
+        while (progress > 0 && smooth >0)
+            {
+            progress--;
+            // smooth = Mathf.Lerp(smooth, speedMax, smooth);
+            smooth += speedUp;
+            newAngle += angleDelta;
+            Quaternion target = Quaternion.Euler(newAngle, newAngle, newAngle);
+            Debug.Log(progress + " " + smooth);            
+            transform.rotation = Quaternion.Slerp(transform.rotation, target, smooth);
+            yield return null; 
+        }        
+        Debug.Log("Start new action " + newAction);
+       // startAction(speedUp);
+    }
+    
+    void startAction(float speedUp)
+    {
+        StartCoroutine(RotateCamera(2f, -speedUp, "End rotation"));
+    }
 }
