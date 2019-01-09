@@ -4,24 +4,36 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-//TODO
-// set numbers of objects for search
-// ввод почты в начале для идентификации
-// хранение информации на сервере
-// онлайн тест бумажный со сохранением статуса и возможностью повторного прохождения
-//
-// фиксируем:
-// - время каждого события (время между попаданием объекта в фокус и покиданием фокуса или выбором объекта)
-// - траекторию движения (в сферических координатах), скорость вращения и ускорение вращения камеры
-// - точность наведения на центр объекта, тип объекта, положение объекта и его размер
-// - правильность выполнения задания
-// - время выполнения задания
-// - 
-
-
 public class Main : MonoBehaviour
 {
-    // Init varables
+    // global temp variables
+    private Sprite uisprite; // default img for text background
+    private GameObject camFade; // camera Fade object
+    private Font defaultFont; // defule text font
+    private Text TextEmail; // user email
+    EventSystem SceneEventSystem; // turn on/off eventSystem   
+    // user data
+    private Dictionary<string, string> userData = new Dictionary<string, string>()
+    {
+        { "Email","" },
+        { "Result1","" },
+        {"Result2","" }
+    };
+    // objects roots for group manipulations
+    private GameObject rootMenu; // menu
+    private GameObject rootCam; // camera
+    private GameObject rootObj; // objects in tests
+    private GameObject rootKeyoard; // keyboard
+
+    // variables for cursor
+    private float defaultTime = 1f; // time in sec focus on an obj for select
+    private Material timedPointer;
+    private string curfocusObj = "";
+    private string curfocusType = "";
+    private float workTime;
+    private bool isTimer=false; // display select cursor    
+
+    // variables for tests
     private int nHor = 10;   // Total number of objects for 6 = 16, for 10 =32 
     private float distanceMax = 6f; // min distance from camera to an object
     private float distanceMin = 16.1f; // max distance from camera to an object
@@ -29,7 +41,7 @@ public class Main : MonoBehaviour
     private int initTestTime = 120; // time for test in sec
     // list of objects colors
     // {"gray","blue","green","red","yellow","purple","brown","black" }
-    private Color[] arrColor = new Color[8]{
+    private readonly Color[] arrColor = new Color[8]{
         new Color(171f / 255f, 171f / 255f, 171f / 255f, 1f),
         new Color(0f, 0f, 128f / 255f, 1f),
         new Color(3f / 255f, 114f / 255f, 21f / 255f, 1f),
@@ -39,42 +51,31 @@ public class Main : MonoBehaviour
         new Color(139f / 255f, 69f / 255f, 19f / 255f, 1f),
         new Color(0f, 0f, 0f, 1f)
     };
-    private float defaultTime = 3f; // time in sec focus on an obj for select
+
     private int selectedColorIndex = 2; // index of selected objects color
-
-    // Temperary variables
-    private GameObject rootMenu;
-    private GameObject rootCam;
-    private Material timedPointer;
-    private string curfocusObj = "";
-    private float workTime;
-    private bool isTimer=false; // display select cursor
-    private bool isTimerShow = false; // display test timer 
-
+    private bool isTimerShow = false; // display timer during a test
     private float testTime;// test time left
-    private Material primitivesMaterial;
-    private GameObject objRoot;
+    private Text timerText;
+    GameObject TimerCanvas; // timer object
+    private Material primitivesMaterial;    
     private int[] objCounter = new int[5] {0,0,0,0,0};    
     private int nVer;    
     private float aStartH;
     private float aStartV;
     private float aStartR;
-    private Sprite uisprite; 
-    private Text timerText;
-    private GameObject camFade;
-    GameObject TimerCanvas;
-    EventSystem SceneEventSystem;
-
+    
     // Start is called before the first frame update
     void Start()
     {
-        objRoot = new GameObject("objRoot");
+        defaultFont = Font.CreateDynamicFontFromOSFont("Roboto", 1);
         camFade = GameObject.Find("camProtector");
         rootCam = GameObject.Find("rootCam");
         GameObject ObjEventSystem = GameObject.Find("GvrEventSystem");
         if (ObjEventSystem)
         { SceneEventSystem = ObjEventSystem.GetComponent<EventSystem>();
-            if (SceneEventSystem) { SceneEventSystem.enabled = false; }
+            if (SceneEventSystem) {
+            //    SceneEventSystem.enabled = false;
+            }
         } else { Debug.Log("Can not find Event System");}
 
         uisprite = UnityEditor.AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
@@ -87,19 +88,22 @@ public class Main : MonoBehaviour
         aStartH = 2 * Mathf.PI / nHor;
         aStartV = 2 * Mathf.PI / nVer;
         aStartR = aStartH / 4f;
-        CreateObjsArray();
+        //CreateObjsArray();
         
         string msg = Data.getMessage("Intro");
         //string msg = "This app allows to choose your future profession.\nPlease path the psychological test before.\n";
-        ShowMessage(msg,"test1");
+        //ShowMessage(msg,"test1");
+        ShowKeyboard();
+        //TextEmail.text = "Hello";
         //ShowTimer();
         // StartCoroutine(fadeScene(2f, true, new Color(0.2f, 0.2f, 0.2f, 1), "Main"));
-        StartCoroutine(RotateCamera(2f, 0.0001f, "End rotation"));
+        //StartCoroutine(RotateCamera(2f, 0.0001f, "End rotation"));
     }
 
     // create objects koordinates list around the camera in random locations
     void CreateObjsArray()
     {
+        rootObj = new GameObject("rootObj");
         // create the list of a coordinate of objects        
         List<Vector3> locations = new List<Vector3>();
         bool pi_0 = true;
@@ -183,7 +187,7 @@ public class Main : MonoBehaviour
     void SetObjParams(GameObject obj, string name, Vector3 loc, Color col)
     {
         obj.name = name;
-        obj.transform.SetParent(objRoot.transform);
+        obj.transform.SetParent(rootObj.transform);
         obj.transform.position = loc;
         Renderer rend = obj.GetComponent<Renderer>();
         rend.material = primitivesMaterial;
@@ -207,10 +211,11 @@ public class Main : MonoBehaviour
     void Update()
     {
         if (isTimer)
-        {
+        {            
             workTime -= Time.deltaTime;
             if (workTime <= 0)
             {
+                //Debug.Log("isTimer");
                 onClickTimed();
                // addOevrlayInfo("Click!");
             }
@@ -245,19 +250,8 @@ public class Main : MonoBehaviour
         Vector3 p2 = new Vector3(0.5f, 0, Mathf.Sqrt(0.75f));
         Vector3 p3 = new Vector3(0.5f, Mathf.Sqrt(0.75f), Mathf.Sqrt(0.75f) / 3);
         mesh.Clear();
-        mesh.vertices = new Vector3[]{
-            p0,p1,p2,
-            p0,p2,p3,
-            p2,p1,p3,
-            p0,p3,p1
-        };
-
-        mesh.triangles = new int[]{
-            0,1,2,
-            3,4,5,
-            6,7,8,
-            9,10,11
-        };
+        mesh.vertices = new Vector3[]{p0,p1,p2,p0,p2,p3, p2,p1,p3,p0,p3,p1};
+        mesh.triangles = new int[]{0,1,2,3,4,5,6,7,8,9,10,11};
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();       
         GameObject obj = new GameObject();       
@@ -271,46 +265,18 @@ public class Main : MonoBehaviour
     {
         Mesh mesh = new Mesh();
         mesh.Clear();
-
         Vector3 p0 = new Vector3(1, 1, 0); //front right top
         Vector3 p1 = new Vector3(0, 1, 0); //front left top
         Vector3 p2 = new Vector3(1, 0, 0); //front right down
         Vector3 p3 = new Vector3(0, 0, 0); //front left down
-
         Vector3 p4 = new Vector3(1, 1, 1); //back right top
         Vector3 p5 = new Vector3(0, 1, 1); //back left top
         Vector3 p6 = new Vector3(1, 0, 1); //back right down
         Vector3 p7 = new Vector3(0, 0, 1); //back left down
-
         Vector3 p8 = new Vector3(0.5f, 1, 0.5f); //center top
         Vector3 p9 = new Vector3(0.5f, 0, 0.5f); //center down
-
-        mesh.vertices = new Vector3[]{
-            p0,p1,p2,p3,  
-            p4,p5,p6,p7,p8
-        };
-
-        mesh.triangles = new int[]{
-            // front
-            8,2,3,             
-            // right
-           8,6,2 //third            
-            // left
-            ,8,3,7 //third
-            // back
-            ,8,7,6 //third            
-            // bottom
-            ,3,2,7 //third
-            ,2,6,7 //fourth
-        };
-
-        //mesh.uv = new Vector2[]{
-        //    new Vector2(0,1),
-        //    new Vector2(0,0),
-        //    new Vector2(1,1),
-        //    new Vector2(1,0),
-        //};
-
+        mesh.vertices = new Vector3[]{p0,p1,p2,p3, p4,p5,p6,p7,p8 };
+        mesh.triangles = new int[]{ 8,2,3,8,6,2,8,3,7,8,7,6,3,2,7,2,6,7};         // front // right// left// back// bottom
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
         GameObject obj = new GameObject();
@@ -366,7 +332,7 @@ public class Main : MonoBehaviour
         EventTrigger be = bt0.AddComponent<EventTrigger>();
         EventTrigger.Entry entryEnterGaze = new EventTrigger.Entry();
         entryEnterGaze.eventID = EventTriggerType.PointerEnter;
-        entryEnterGaze.callback.AddListener((eventData) => { onEnterTimed(action); });
+        entryEnterGaze.callback.AddListener((eventData) => { onEnterTimed(action,""); });
         be.triggers.Add(entryEnterGaze);
         EventTrigger.Entry entryExitGaze = new EventTrigger.Entry();
         entryExitGaze.eventID = EventTriggerType.PointerExit;
@@ -383,8 +349,7 @@ public class Main : MonoBehaviour
         RectTransform trans = textObject.AddComponent<RectTransform>();
         trans.sizeDelta = new Vector2(w, h);
         trans.anchoredPosition3D = new Vector3(0, 0, 0);
-        trans.anchoredPosition = new Vector2(x, y);
-        //trans.transform.rotation = Quaternion.AngleAxis(-180, Vector3.up);
+        trans.anchoredPosition = new Vector2(x, y);        
         trans.localScale = new Vector3(1.0f, 1.0f, 0f);
         trans.localPosition.Set(0, 0, 0);
         textObject.AddComponent<CanvasRenderer>();
@@ -393,63 +358,78 @@ public class Main : MonoBehaviour
         text.text = message;
         text.fontSize = fontSize;
         if (fontStyle == 1) { text.fontStyle = FontStyle.Bold; }
-        text.font = Resources.GetBuiltinResource(typeof(Font), "Arial.ttf") as Font;
+        text.font = defaultFont;        
         text.alignment = achor;
-        //text.alignment = TextAnchor.MiddleCenter;
         //text.horizontalOverflow = HorizontalWrapMode.Overflow;
         text.color = new Color(0, 0, 0);
         return textObject;
     }
 
-    public void onEnterTimed(string name)
+    public void onEnterTimed(string type, string name)
     {
+        Debug.Log("onEnterTimed=" + name + "=" + type);
         isTimer = true;
         workTime = defaultTime;
         timedPointer.SetFloat("_Angle", 0);
         curfocusObj = name;
+        curfocusType = type;
     }
     public void onExitTimed()
     {
         isTimer = false;
         curfocusObj = "";
+        curfocusType = "";
         workTime = defaultTime;
         timedPointer.SetFloat("_Angle", 360);
     }
 
     private void onClickTimed()
     {
-        clickSelectEvent(curfocusObj);
+        clickSelectEvent();
     }
 
-    private void clickSelectEvent(string name)
+    private void clickSelectEvent()
     {
-        onExitTimed();
+        isTimer = false;
         //addOevrlayInfo("clickSelectEvent" + name);
-        Debug.Log("clickSelectEvent=" + name + "=");
-        switch (name)
+        Debug.Log("clickSelectEvent=" + curfocusType + "="+ curfocusObj);
+        switch (curfocusType)
         {
             case "test":
                 Color color = new Color(0.2f, 0.2f, 0.2f, 0f);
                 //StartCoroutine(fadeScene(0.5f, false, color, "colorTest"));
                 break;
             case "btnModel":
-                Debug.Log("clickSelectEvent 2 =" + name + "=");
+                Debug.Log("clickSelectEvent 2 =" + curfocusType + "=");
                 Destroy(rootMenu);
                 //showTutorialContent(name);
                 break;
             case "btnToMain":
-                Debug.Log("clickSelectEvent 3 =" + name + "=");                                
+                Debug.Log("clickSelectEvent 3 =" + curfocusType + "=");                                
                 //Destroy(rootMenu);
                 //ShowMainMenu();
                 break;
             case "Part_1":
                 //globalData.setCurVideoName(0);
                 //tryStartVideo();
-                break;            
+                break;
+            case  "Keyboard":
+                //Debug.Log("clickSelectEvent 3 =" + curfocusType + "="+ curfocusObj);
+                if (curfocusObj.Contains("DEL")){
+                    string str = TextEmail.text;
+                    if (str.Length > 0){TextEmail.text = str.Substring(0, str.Length - 1);}
+                } else{ TextEmail.text += curfocusObj;}
+                break;
+            case "Enter":
+                Debug.Log("clickSelectEvent 4 =" + curfocusType + "=" + curfocusObj);
+                userData["Enail"] = TextEmail.text;
+                Destroy(rootKeyoard);
+                break;
             default:
                 Debug.Log("clickSelectEvent not found action for " + name);
                 break;
         }
+        onExitTimed();
     }
 
     private void ShowTimer()
@@ -550,11 +530,132 @@ public class Main : MonoBehaviour
             yield return null; 
         }        
         Debug.Log("Start new action " + newAction);
-       // startAction(speedUp);
+       // StartAction(speedUp);
     }
     
-    void startAction(float speedUp)
+    void StartAction(float speedUp)
     {
         StartCoroutine(RotateCamera(2f, -speedUp, "End rotation"));
+    }
+
+    void ShowKeyboard()
+    {
+        int len = 12;
+        int width = 60;
+        int startPosX = -342;
+        int startPosY = 125;
+        int i = 0;
+        int j = 0;               
+        rootKeyoard = new GameObject("rootKeyoard");
+        Canvas c = rootKeyoard.AddComponent<Canvas>();
+        c.renderMode = RenderMode.WorldSpace;
+        rootKeyoard.transform.SetParent(rootKeyoard.transform);
+        rootKeyoard.AddComponent<CanvasScaler>();
+        rootKeyoard.AddComponent<GvrPointerGraphicRaycaster>();
+        RectTransform NewCanvasRect = rootKeyoard.GetComponent<RectTransform>();
+        NewCanvasRect.sizeDelta = new Vector2(770, 350);
+        NewCanvasRect.localScale = new Vector3(0.07f, 0.07f, 1f);
+        NewCanvasRect.localPosition = new Vector3(0, 0, 0);
+        GameObject panel = new GameObject("Panel");
+        panel.AddComponent<CanvasRenderer>();
+        Image img = panel.AddComponent<Image>();
+        img.color = new Vector4(1, 1, 1, 0.7f);
+        img.sprite = uisprite;
+        img.type = Image.Type.Sliced;
+        RectTransform panelTransform = panel.GetComponent<RectTransform>();
+        panel.transform.SetParent(NewCanvasRect, true);
+        panelTransform.localScale = new Vector3(0.2f, 0.2f, 1f);
+        panelTransform.localPosition = new Vector3(0, 0, 0);
+        panelTransform.sizeDelta = new Vector2(770, 330);
+
+        Dictionary<string, string> keyDictionary = Data.getKeys();
+        foreach (KeyValuePair<string, string> item in keyDictionary)
+        {
+            float delta = 0;
+            if (item.Key.Length > 1) { width = 60 * 2; i += 1; delta = 30; }
+            if (i >= len) {j++; i = 0;}
+            //CreateText(panelTransform, i*60, j*60, 1200, 300, item.Value, 50, 0, TextAnchor.MiddleCenter);
+            GameObject bt0 = new GameObject(item.Key);
+            RectTransform br = bt0.AddComponent<RectTransform>();
+            br.sizeDelta = new Vector2(width, 60);
+            Image imgKey = bt0.AddComponent<Image>();
+            imgKey.sprite = uisprite;
+            imgKey.color = new Vector4(0.5f, 0.5f, 0.8f, 1);
+            //img.material.color = new Vector4(1f, 1f, 1f, 0.7f);
+            imgKey.type = Image.Type.Sliced;
+            Button bt = bt0.AddComponent<Button>();
+            bt0.transform.SetParent(panelTransform, true);
+            bt0.transform.localPosition = new Vector3(startPosX+i * (60+2)-delta, startPosY - j * (60+2), 0);
+            //bt0.transform.rotation = Quaternion.AngleAxis(-180, Vector3.up);
+            bt0.transform.localScale = new Vector3(1, 1, 1);
+            CreateText(bt.transform, 0, 0, width, 60, item.Value, 40, 1, TextAnchor.MiddleCenter);
+            bt.onClick.AddListener(onClickTimed);
+            EventTrigger be = bt0.AddComponent<EventTrigger>();
+            EventTrigger.Entry entryEnterGaze = new EventTrigger.Entry();
+            entryEnterGaze.eventID = EventTriggerType.PointerEnter;
+            entryEnterGaze.callback.AddListener((eventData) => { onEnterTimed("Keyboard",item.Key); });
+            be.triggers.Add(entryEnterGaze);
+            EventTrigger.Entry entryExitGaze = new EventTrigger.Entry();
+            entryExitGaze.eventID = EventTriggerType.PointerExit;
+            entryExitGaze.callback.AddListener((eventData) => { onExitTimed(); });
+            be.triggers.Add(entryExitGaze);
+           // Debug.Log(j + "-" + i + " " + item.Key + "" + item.Value);
+            i++;
+            //if (item.Key.Length > 1) {i += 1; }
+        }
+        GameObject bt0k = new GameObject("Enter");
+        RectTransform brOk = bt0k.AddComponent<RectTransform>();
+        brOk.sizeDelta = new Vector2(150, 60);
+        Image imgKeyOk = bt0k.AddComponent<Image>();
+        imgKeyOk.sprite = uisprite;
+        imgKeyOk.color = new Vector4(0.5f, 0.5f, 0.8f, 1);
+        //img.material.color = new Vector4(1f, 1f, 1f, 0.7f);
+        imgKeyOk.type = Image.Type.Sliced;
+        Button btOk_bt = bt0k.AddComponent<Button>();
+        bt0k.transform.SetParent(panelTransform, true);
+        bt0k.transform.localPosition = new Vector3(0, -213, 0);
+        //bt0.transform.rotation = Quaternion.AngleAxis(-180, Vector3.up);
+        bt0k.transform.localScale = new Vector3(1, 1, 1);
+        CreateText(btOk_bt.transform, 0, 0, width, 60, "Save", 40, 1, TextAnchor.MiddleCenter);
+        btOk_bt.onClick.AddListener(onClickTimed);
+        EventTrigger beOk = bt0k.AddComponent<EventTrigger>();
+        EventTrigger.Entry entryEnterGazeOk = new EventTrigger.Entry();
+        entryEnterGazeOk.eventID = EventTriggerType.PointerEnter;
+        entryEnterGazeOk.callback.AddListener((eventData) => { onEnterTimed("Enter", ""); });
+        beOk.triggers.Add(entryEnterGazeOk);
+        EventTrigger.Entry entryExitGazeOk = new EventTrigger.Entry();
+        entryExitGazeOk.eventID = EventTriggerType.PointerExit;
+        entryExitGazeOk.callback.AddListener((eventData) => { onExitTimed(); });
+        beOk.triggers.Add(entryExitGazeOk);
+        rootKeyoard.transform.position = new Vector3(0, -2.3f, 12);
+        rootKeyoard.transform.Rotate(Vector3.left, -30);
+
+        GameObject InputMsg = new GameObject("InputMsg");
+        InputMsg.transform.SetParent(NewCanvasRect);
+        RectTransform brInputMsg = InputMsg.AddComponent<RectTransform>();
+        brInputMsg.localScale = new Vector3(1.2f, 0.2f, 1f);
+        brInputMsg.sizeDelta = new Vector2(270, 40);
+        //brInputMsg.Rotate(Vector3.left, -150);
+        brInputMsg.localPosition = new Vector3(0, 135, 4);
+        Image imgInputMsg = InputMsg.AddComponent<Image>();
+        imgInputMsg.sprite = uisprite;
+        imgInputMsg.color = new Vector4(0.8f, 0.8f, 0.8f, 1);
+        imgInputMsg.type = Image.Type.Sliced;
+        CreateText(brInputMsg, 0, 1f, 270, 40, Data.getMessage("Email"), 12, 1, TextAnchor.MiddleCenter);
+
+        GameObject Input = new GameObject("Input");
+        Input.transform.SetParent(NewCanvasRect);
+        RectTransform brInput = Input.AddComponent<RectTransform>();
+        brInput.localScale = new Vector3(0.5f, 0.5f, 1f);
+        brInput.sizeDelta = new Vector2(450, 6);
+        brInput.Rotate(Vector3.left,-150);
+        brInput.localPosition = new Vector3(0, 94, 6);                
+        Image imgInput = Input.AddComponent<Image>();
+        imgInput.sprite = uisprite;
+        imgInput.color = new Vector4(0.9f, 0.9f, 0.9f, 1);
+        imgInput.type = Image.Type.Sliced;
+        GameObject InputText = CreateText(brInput, 0, -0.5f, 350, 50, "", 12, 1, TextAnchor.MiddleCenter);
+        TextEmail = InputText.GetComponent<Text>();
+        InputText.transform.localScale = new Vector3(1.2f,0.6f,1);
     }
 }
