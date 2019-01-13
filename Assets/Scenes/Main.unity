@@ -335,8 +335,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   raycasterEventMask:
     serializedVersion: 2
-    m_Bits: 4294967295
-  maxRaycastHits: 2
+    m_Bits: 5
+  maxRaycastHits: 10
 --- !u!4 &1032206884 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 400000, guid: 4bcd3bbb48c53224792394bad217bb26,
