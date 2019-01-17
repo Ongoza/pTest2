@@ -7,20 +7,16 @@ using UnityEngine.EventSystems;
 public class Main : MonoBehaviour
 {
     // global temp variables
-    private int curScene =3; // a current scene index
+    private int curScene =4; // a current scene index
+    private int initTestTime = 20; // time limit for the second test in sec
     private Sprite uisprite; // default img for text background
     private GameObject camFade; // camera Fade object
     private Font defaultFont; // defule text font
     private Text TextEmail; // user email
     EventSystem SceneEventSystem; // turn on/off eventSystem   
+    private string startDateTime = ""; // date and time the test starting
     private bool isActionSave = false;      
-    // user data
-    private Dictionary<string, string> userData = new Dictionary<string, string>()
-    {
-        { "Email","" },
-        { "Result1","" },
-        {"Result2","" }
-    };
+    // user data  
     // objects roots for group manipulations
     private GameObject rootObj; // root of objects 
 
@@ -29,10 +25,21 @@ public class Main : MonoBehaviour
     private Material timedPointer;
     private string curfocusObj = "";
     private string curfocusType = "";
-    private int[] curfocusObjCode = new int[5] {-1,0,0,0,0 };
+    private float[] curfocusObjCode = new float[11] {-1,0,0,0,0,0,0,0,0,0,0 };
     //curfocusObjCode[0]-  -1 - non avtive object, 0 - active right object, >0 - active object
+    //curfocusObjCode[1]-  (0-4) cur type index of object
+    //curfocusObjCode[2]-  (0-7) cur index of selected objects color    
+    //curfocusObjCode[3]-  (0-4) right type index of object
+    //curfocusObjCode[4]-  (0-7) right index of selected objects color
+    //curfocusObjCode[5]-  position.x to object
+    //curfocusObjCode[6]-  position.y to object
+    //curfocusObjCode[7]-  position.z to object
+    //curfocusObjCode[8]-  rotation.x to object
+    //curfocusObjCode[9]-  rotation.y to object
+    //curfocusObjCode[10]-  rotation.z to object
     private float workTime;
-    private bool isTimer = false; // display select cursor    
+    private bool isTimer = false; // display select cursor 
+    private TestData testData;
 
     // variables for tests
     //{ "Cube", "Sphere", "Capsule", "Cylinder","Pyramid" };
@@ -45,9 +52,8 @@ public class Main : MonoBehaviour
     private int curTestIndex = 0; //a current test number
 
     private int nHor = 10;   // Total number of objects for 6 = 16, for 10 =32 
-    private float distanceMax = 6f; // min distance from camera to an object
+    private float distanceMax = 8f; // min distance from camera to an object
     private float distanceMin = 16.1f; // max distance from camera to an objec    
-    private int initTestTime = 60; // time for test in sec
     // list of objects colors {"gray","blue","green","red","yellow","purple","brown","black" }
     private readonly List<Color> arrColor = new List<Color>(){ 
         new Color(141f / 255f, 141f / 255f, 141f / 255f, 1f),
@@ -70,11 +76,12 @@ public class Main : MonoBehaviour
     private int nVer;
     private float aStartH;
     private float aStartV;
-    private float aStartR;
+    private float aStartR;    
 
     //fixing actions time variables
     // user actions during one scene
     private Dictionary<float, float[]> userSceneData;
+    private SnenaMotionData snenaMotionData;
     // x - time from start scene
     // userDataList[x][0] - head.rotation.x
     // userDataList[x][1] - head.rotation.y
@@ -89,9 +96,16 @@ public class Main : MonoBehaviour
     private Dictionary<int, Dictionary<float, float[]>> userScenesData = new Dictionary<int, Dictionary<float, float[]>>();
     private float userSceneDataTime =0.0f; // timer data
 
-    void Start(){
-        defaultFont = Font.CreateDynamicFontFromOSFont("Roboto", 1);
-        camFade = GameObject.Find("camProtector");        
+    // result settings
+    private float[] timerShowResult = new float[]{0f, 10f, 10f}; // timer how long wait for the result [trigger,default,current]
+
+    void Start(){                
+        defaultFont = Font.CreateDynamicFontFromOSFont("Roboto", 1);        
+        camFade = GameObject.Find("camProtector");
+        testData = new TestData();
+        testData.snenaMotionData = new SnenaMotionData[10];
+        testData.startDateTime = System.DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss") + " Zone=" + System.TimeZoneInfo.Local;
+        snenaMotionData = new SnenaMotionData();
         GameObject ObjEventSystem = GameObject.Find("GvrEventSystem");
         if (ObjEventSystem){
             SceneEventSystem = ObjEventSystem.GetComponent<EventSystem>();
@@ -178,15 +192,15 @@ public class Main : MonoBehaviour
         canExit.transform.Rotate(Vector3.left, -60);
         Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = true;
         // Create hint for tested person
-        TimerCanvas = new GameObject("Timer");
+        TimerCanvas = new GameObject("Hint");
         Canvas c = TimerCanvas.AddComponent<Canvas>();
         c.renderMode = RenderMode.WorldSpace;
         TimerCanvas.AddComponent<CanvasScaler>();
         RectTransform NewCanvasRect = TimerCanvas.GetComponent<RectTransform>();
         TimerCanvas.transform.SetParent(Camera.main.transform, true);
-        NewCanvasRect.localPosition = new Vector3(0, 5f, 10);
+        NewCanvasRect.localPosition = new Vector3(0, 3.6f, 7);
         NewCanvasRect.sizeDelta = new Vector2(300, 40);
-        NewCanvasRect.localScale = new Vector3(0.1f, 0.1f, 1f);
+        NewCanvasRect.localScale = new Vector3(0.06f, 0.06f, 1f);
         GameObject panel = new GameObject("HintPanel");
         panel.AddComponent<CanvasRenderer>();
         Image img = panel.AddComponent<Image>();
@@ -206,7 +220,7 @@ public class Main : MonoBehaviour
         panelTransform.localRotation = Quaternion.AngleAxis(0, Vector3.right);
         panelTransform.localPosition = new Vector3(0, 0, 0);
         panelTransform.sizeDelta = new Vector2(300, height);
-        GameObject txtObj = CreateText(panelTransform, new Vector2(0, 0), new Vector2(300, height), msg, 12, 0, TextAnchor.MiddleCenter);
+        GameObject txtObj = CreateText(panelTransform, new Vector2(0,1.5f), new Vector2(300, height), msg, 12, 0, TextAnchor.MiddleCenter);
         txtObj.transform.localRotation = Quaternion.AngleAxis(0, Vector3.right);
         hintText = txtObj.GetComponent<Text>();        
         isHintDisplay = true;
@@ -218,6 +232,8 @@ public class Main : MonoBehaviour
             obj.name = name;
             obj.transform.SetParent(rootObj.transform);
             obj.transform.position = loc;
+            float rot = Random.Range(0, 360);
+            obj.transform.eulerAngles = new Vector3(rot, rot, rot);
             Renderer rend = obj.GetComponent<Renderer>();
             rend.material = primitivesMaterial;
             rend.material.color = col;
@@ -366,25 +382,29 @@ public class Main : MonoBehaviour
     }
 
     void Update(){        
-        if (isActionSave) {            
-            userSceneData.Add(
-                userSceneDataTime+=Time.deltaTime, 
-                new float[9]{
+        if (isActionSave) {                    
+            snenaMotionData.userActivity.Add(userSceneDataTime += Time.deltaTime,
+                new float[14]{
                     Camera.main.transform.eulerAngles.x,
                     Camera.main.transform.eulerAngles.y,
                     Camera.main.transform.eulerAngles.z,
-                    curfocusObjCode[0],
-                    0,// distance from center
-                    curfocusObjCode[1],
-                    curfocusObjCode[2],
-                    curfocusObjCode[3],
-                    curfocusObjCode[4]
+                    curfocusObjCode[0], // right or not                    
+                    curfocusObjCode[1], // cur obj type 
+                    curfocusObjCode[2], // cur obj color
+                    curfocusObjCode[3], // right obj type
+                    curfocusObjCode[4], // right obj color
+                    curfocusObjCode[5],// obj position.x 
+                    curfocusObjCode[6],// obj position.y 
+                    curfocusObjCode[7],// obj position.z 
+                    curfocusObjCode[8],// obj angle.x
+                    curfocusObjCode[9],// obj angle.y
+                    curfocusObjCode[10]// obj angle.z
             });
         }
         if (isTimer){ // display selecting pointer
             workTime -= Time.deltaTime;
             if (workTime <= 0) { OnClickTimed();
-            }else{ if (timedPointer){ timedPointer.SetFloat("_Angle", (1f - workTime / defaultTime) * 360); }}
+            }else{ if (timedPointer){ timedPointer.SetFloat("_Angle", (1f - workTime / defaultTime) * 360); } }
         }
         if (isHintDisplay){ //display hint in test
             string msgTimer = "";
@@ -404,9 +424,14 @@ public class Main : MonoBehaviour
                 }
             }
         }
+        if(timerShowResult[0] > 0){
+            // send data to server after waiting            
+            if (timerShowResult[2] > 0) { timerShowResult[2]--;
+            }else{ sendDataToServer();}
+        }
     }
 
-    private void OnEnterTimed(string type, string name, bool isButton){
+     private void OnEnterTimed(string type, string name, bool isButton){
         //Debug.Log("onEnterTimed=" + name + "=" + type);
         isTimer = true;
         workTime = defaultTime;
@@ -414,22 +439,31 @@ public class Main : MonoBehaviour
         curfocusObj = name;
         curfocusType = type;
         string[] arrName = name.Split('_');
-        curfocusObjCode = new int[5] { -1, 0, 0, 0, 0};
-        int.TryParse(arrName[0], out curfocusObjCode[0]);
-        int.TryParse(arrName[1], out curfocusObjCode[1]);
+        curfocusObjCode = new float[11] { -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        float.TryParse(arrName[0], out curfocusObjCode[0]);
+        float.TryParse(arrName[1], out curfocusObjCode[1]);
         if (!isButton){
+            float.TryParse(arrName[2], out curfocusObjCode[2]);
             curfocusObjCode[3] = testsConfig[curTestIndex, 0];
-            curfocusObjCode[4] = testsConfig[curTestIndex, 1];
-            int.TryParse(arrName[2], out curfocusObjCode[2]);
-        }        
-        Debug.Log(string.Join(";", curfocusObjCode));        
+            curfocusObjCode[4] = testsConfig[curTestIndex, 1];            
+        }
+        GameObject gm = GameObject.Find(curfocusObj);        
+        if (gm) {
+            curfocusObjCode[5] = Mathf.RoundToInt(gm.transform.position.x);
+            curfocusObjCode[6] = Mathf.RoundToInt(gm.transform.position.y);
+            curfocusObjCode[7] = Mathf.RoundToInt(gm.transform.position.z);
+            curfocusObjCode[8] = Mathf.RoundToInt(gm.transform.eulerAngles.x);
+            curfocusObjCode[9] = Mathf.RoundToInt(gm.transform.eulerAngles.y);
+            curfocusObjCode[10] = Mathf.RoundToInt(gm.transform.eulerAngles.z);
+        }
+        //Debug.Log(name+"="+string.Join(";", curfocusObjCode));        
     }
 
     private void OnExitTimed(){
         isTimer = false;
         curfocusObj = "";
         curfocusType = "";
-        curfocusObjCode = new int[5]{-1,0,0,0,0};
+        curfocusObjCode = new float[11] { -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
         workTime = defaultTime;
         if (timedPointer) { timedPointer.SetFloat("_Angle", 360); }
     }
@@ -464,10 +498,10 @@ public class Main : MonoBehaviour
                 } else { if (TextEmail) { TextEmail.text += curfocusObj; } }
                 break;
             case "Enter":
-                userData["Enail"] = TextEmail.text;
+                testData.email = TextEmail.text;
                 NextScene(1);
                 break;
-            case "Exit": curScene = 0; NextScene(0); break;
+            case "Exit": sendDataToServer(); curScene = 0; NextScene(0); break;
             default: Debug.Log("clickSelectEvent not found action for " + name); break;
         }
         OnExitTimed();
@@ -600,13 +634,19 @@ public class Main : MonoBehaviour
         isHintDisplay = false;
         isDisplayTimer = false;
         SceneEventSystem.enabled = false;
-        Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = false;        
-        if (delta>0){
-            Debug.Log(JsonUtility.ToJson(userSceneData)); 
-            userScenesData.Add(curScene, userSceneData);}        
+        Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = false;
+        if (delta > 0)
+        {
+            Debug.Log(JsonUtility.ToJson(userSceneData));
+            //testData.snenaMotionData.Add(snenaMotionData);
+            userScenesData.Add(curScene, userSceneData);
+        }        
         curScene += delta;
-        curfocusObjCode = new int[5] { -1, 0, 0, 0, 0 };
-        userSceneData = new Dictionary<float, float[]>();        
+        curfocusObjCode = new float[11] { -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        userSceneData = new Dictionary<float, float[]>();
+        snenaMotionData = new SnenaMotionData();
+        snenaMotionData.sceneIndex = curScene;
+        snenaMotionData.userActivities = new UserActivities[10];
         if (rootObj) { Destroy(rootObj);}
         if (TimerCanvas) { Destroy(TimerCanvas);}
         switch (curScene){
@@ -626,6 +666,8 @@ public class Main : MonoBehaviour
                 break;
             case 5:  curTestIndex = 1;  CreateObjsArray(true); break;
             case 6:
+                timerShowResult[2] = timerShowResult[1];
+                timerShowResult[0] = 1 ;
                 string msg3 = string.Format(Data.getMessage("Result"), testsConfig[0, 3], testsConfig[0, 2], testsConfig[1, 3], testsConfig[1, 2], Mathf.Floor(initTestTime - testTime).ToString());
                 ShowMessage(msg3, "Exit", "Repeat", new Vector2(1400, 400), TextAnchor.MiddleLeft, new Vector2(25,50));
                 break;
@@ -636,8 +678,32 @@ public class Main : MonoBehaviour
         isActionSave = true;
     }
 
-    void OnDisable(){ Debug.Log("PrintOnDisable: script was disabled"); }
+    void OnDisable(){
+        Debug.Log("PrintOnDisable: script was disabled");        
+        sendDataToServer();
+    }
 
-    void OnEnable(){ Debug.Log("PrintOnEnable: script was enabled"); }
+    void OnEnable(){ Debug.Log("PrintOnEnable: script was enabled");}
 
+    private void sendDataToServer(){
+        isActionSave = false;
+        timerShowResult[0] = 0;
+        if (userScenesData.Count > 0){
+            Debug.Log("Json="+JsonUtility.ToJson(userScenesData, true));
+            Debug.Log("Send data to server start");
+            string jsonString = "{\"UserData\":{\"startDateTime:\""+ startDateTime + "\"},\"testResultData\":";
+            //userScenesData             
+            foreach (var keyScene in userScenesData.Keys)
+            {
+                foreach (var timeData in userScenesData[keyScene].Keys)
+                {
+                   // Debug.Log("TimeData=" + string.Join(",", userScenesData[keyScene][timeData]));
+                }
+            }
+            jsonString += "}";
+            Debug.Log("JsonData="+JsonUtility.ToJson(testData));
+            testData = new TestData();
+            userScenesData = new Dictionary<int, Dictionary<float, float[]>>();
+        }else{Debug.Log("No data send to server");}
+    }
 }
