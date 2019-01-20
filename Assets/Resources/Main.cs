@@ -7,7 +7,7 @@ using UnityEngine.EventSystems;
 public class Main : MonoBehaviour
 {
     // global temp variables
-    private int curScene =4; // a current scene index
+    private int curScene =2; // a current scene index
     private int initTestTime = 20; // time limit for the second test in sec
     private Sprite uisprite; // default img for text background
     private GameObject camFade; // camera Fade object
@@ -15,7 +15,8 @@ public class Main : MonoBehaviour
     private Text TextEmail; // user email
     EventSystem SceneEventSystem; // turn on/off eventSystem   
     private string startDateTime = ""; // date and time the test starting
-    private bool isActionSave = false;      
+    private bool isActionSave = false;     
+    private float[] lastAction;
     // user data  
     // objects roots for group manipulations
     private GameObject rootObj; // root of objects 
@@ -80,8 +81,7 @@ public class Main : MonoBehaviour
 
     //fixing actions time variables
     // user actions during one scene
-    private Dictionary<float, float[]> userSceneData;
-    private SnenaMotionData snenaMotionData;
+    private SnenaMotionData curSnenaMotionData;
     // x - time from start scene
     // userDataList[x][0] - head.rotation.x
     // userDataList[x][1] - head.rotation.y
@@ -93,25 +93,26 @@ public class Main : MonoBehaviour
     // userDataList[x][7] - 0-7 color of right object
     // userDataList[x][8] - 0-4 type of right object
     // User ations in all (7) scenes
-    private Dictionary<int, Dictionary<float, float[]>> userScenesData = new Dictionary<int, Dictionary<float, float[]>>();
     private float userSceneDataTime =0.0f; // timer data
 
     // result settings
     private float[] timerShowResult = new float[]{0f, 10f, 10f}; // timer how long wait for the result [trigger,default,current]
 
-    void Start(){                
+    void Start(){             
         defaultFont = Font.CreateDynamicFontFromOSFont("Roboto", 1);        
         camFade = GameObject.Find("camProtector");
-        testData = new TestData();
-        testData.snenaMotionData = new SnenaMotionData[10];
-        testData.startDateTime = System.DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss") + " Zone=" + System.TimeZoneInfo.Local;
-        snenaMotionData = new SnenaMotionData();
+        testData = new TestData(){
+            snenasMotionData = new List<SnenaMotionData>(),
+            rightObjectsList = new List<TestObjects>(),
+            selectedObjectsList = new List<TestObjects>(),
+            startDateTime = System.DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss") + " Zone=" + System.TimeZoneInfo.Local
+        };
+        curSnenaMotionData = new SnenaMotionData(){sceneIndex = 0, userActivities = new List<UserActivity>()};
+        lastAction = new float[14];
         GameObject ObjEventSystem = GameObject.Find("GvrEventSystem");
         if (ObjEventSystem){
             SceneEventSystem = ObjEventSystem.GetComponent<EventSystem>();
-            if (SceneEventSystem) {
-                SceneEventSystem.enabled = false;
-            }
+            if (SceneEventSystem) { SceneEventSystem.enabled = false;}
         } else { Debug.Log("Can not find Event System");}
         Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = false;
 
@@ -164,16 +165,38 @@ public class Main : MonoBehaviour
         //Debug.Log(locations.Count + " Array of objects coor =" + string.Join(",", locations));
         int max = locations.Count;
         //create objects for selection by a tested person
-        List<int> objectTypes = new List<int>() { 0, 1, 2, 3, 4 };        
+        List<int> objectTypes = new List<int>() { 0, 1, 2, 3, 4 };
+        TestObjects rightObjectsList = new TestObjects() {
+            testIndex = curTestIndex,
+            objectsList = new List<TestObject>()
+        };        
         for (int j = 0; j < testsConfig[curTestIndex, 2]; j++){
             int newIndex = Random.Range(0, max);            
             string name = "0_"+testsConfig[curTestIndex, 0] + "_" + testsConfig[curTestIndex, 1] + "_" + j;
-            SetUpObj(testsConfig[curTestIndex, 0], name, locations[newIndex], arrColor[testsConfig[curTestIndex, 1]]);
+            float rot = Random.Range(0, 360);
+            SetUpObj(testsConfig[curTestIndex, 0], name, locations[newIndex], arrColor[testsConfig[curTestIndex, 1]], rot);
+            rightObjectsList.objectsList.Add(
+                new TestObject() {
+                        objectColorIndex = testsConfig[curTestIndex, 1], 
+                        objectTypeIndex = testsConfig[curTestIndex, 0],
+                        location_x = Mathf.Round(locations[newIndex].x*100)/100f,
+                        location_y = Mathf.Round(locations[newIndex].y * 100) / 100f,
+                        location_z = Mathf.Round(locations[newIndex].z * 100)/ 100f,
+                        rotation_x = rot,
+                        rotation_y = rot,
+                        rotation_z = rot
+                });
             locations.RemoveAt(newIndex);
             max--;
-        }        
+        }
+        testData.rightObjectsList.Add(rightObjectsList);
+        testData.selectedObjectsList.Add(
+            new TestObjects() { 
+                testIndex = curTestIndex,
+                objectsList = new List<TestObject>()
+            });
         objectTypes.Remove(testsConfig[curTestIndex,0]);
-        //Debug.Log(locations.Count + " Array of objects coor =" + string.Join(",", objectTypes));
+        //Debug.Log(testData.selectedObjectsList.Count + " testData created =" + JsonUtility.ToJson(testData.selectedObjectsList));
         //create rnadom objects
         int cntObjs = 1;
         foreach (Vector3 loc in locations){
@@ -183,7 +206,7 @@ public class Main : MonoBehaviour
             string objName = cntObjs+"_"+ typeObj +"_" + colIndex + "_" + objCounter[typeObj];
             objCounter[typeObj]++;
             cntObjs++;
-            SetUpObj(typeObj, objName, loc, col);
+            SetUpObj(typeObj, objName, loc, col, Random.Range(0, 360));
         }
         //Debug.Log("Created objects"+string.Join(",",objCounter.ToString()));        
         GameObject canExit = CreateCanwas("rootMenu", btExitLoc, new Vector2(100, 50));
@@ -227,12 +250,11 @@ public class Main : MonoBehaviour
         isDisplayTimer = isShowTime;
     }
 
-    void SetUpObjParams(GameObject obj, string name, Vector3 loc, Color col){
+    void SetUpObjParams(GameObject obj, string name, Vector3 loc, Color col, float rot){
         if (obj) { 
             obj.name = name;
             obj.transform.SetParent(rootObj.transform);
-            obj.transform.position = loc;
-            float rot = Random.Range(0, 360);
+            obj.transform.position = loc;            
             obj.transform.eulerAngles = new Vector3(rot, rot, rot);
             Renderer rend = obj.GetComponent<Renderer>();
             rend.material = primitivesMaterial;
@@ -248,14 +270,15 @@ public class Main : MonoBehaviour
         }
     }
 
-    void SetUpObj(int typeObj, string name, Vector3 loc, Color col){
+    void SetUpObj(int typeObj, string name, Vector3 loc, Color col, float rot)
+    {
         //Debug.Log("typeObj " + typeObj);
         switch (typeObj){
-            case 0: SetUpObjParams(GameObject.CreatePrimitive(PrimitiveType.Cube), name, loc, col); break;
-            case 1: SetUpObjParams(GameObject.CreatePrimitive(PrimitiveType.Sphere), name, loc, col); break;
-            case 2: SetUpObjParams(GameObject.CreatePrimitive(PrimitiveType.Capsule), name, loc, col); break;
-            case 3: SetUpObjParams(GameObject.CreatePrimitive(PrimitiveType.Cylinder), name, loc, col); break;
-            case 4: SetUpObjParams(CreatPyramid3(), name, loc, col); break;
+            case 0: SetUpObjParams(GameObject.CreatePrimitive(PrimitiveType.Cube), name, loc, col, rot); break;
+            case 1: SetUpObjParams(GameObject.CreatePrimitive(PrimitiveType.Sphere), name, loc, col, rot); break;
+            case 2: SetUpObjParams(GameObject.CreatePrimitive(PrimitiveType.Capsule), name, loc, col, rot); break;
+            case 3: SetUpObjParams(GameObject.CreatePrimitive(PrimitiveType.Cylinder), name, loc, col, rot); break;
+            case 4: SetUpObjParams(CreatPyramid3(), name, loc, col, rot); break;
             default: print("Error!!! Incorrect obj type."); break;
         }
     }
@@ -382,24 +405,34 @@ public class Main : MonoBehaviour
     }
 
     void Update(){        
-        if (isActionSave) {                    
-            snenaMotionData.userActivity.Add(userSceneDataTime += Time.deltaTime,
-                new float[14]{
-                    Camera.main.transform.eulerAngles.x,
-                    Camera.main.transform.eulerAngles.y,
-                    Camera.main.transform.eulerAngles.z,
-                    curfocusObjCode[0], // right or not                    
-                    curfocusObjCode[1], // cur obj type 
-                    curfocusObjCode[2], // cur obj color
-                    curfocusObjCode[3], // right obj type
-                    curfocusObjCode[4], // right obj color
-                    curfocusObjCode[5],// obj position.x 
-                    curfocusObjCode[6],// obj position.y 
-                    curfocusObjCode[7],// obj position.z 
-                    curfocusObjCode[8],// obj angle.x
-                    curfocusObjCode[9],// obj angle.y
-                    curfocusObjCode[10]// obj angle.z
-            });
+        if (isActionSave) {
+            userSceneDataTime += Time.deltaTime;
+            float[] curAction = new float[14]{
+                   Mathf.Round(Camera.main.transform.eulerAngles.x*100)/100f,
+                   Mathf.Round(Camera.main.transform.eulerAngles.y*100)/100f,
+                   Mathf.Round(Camera.main.transform.eulerAngles.z*100)/100f,
+                   curfocusObjCode[0], // right or not                    
+                   curfocusObjCode[1], // cur obj type 
+                   curfocusObjCode[2], // cur obj color
+                   curfocusObjCode[3], // right obj type
+                   curfocusObjCode[4], // right obj color
+                   curfocusObjCode[5],// obj position.x 
+                   curfocusObjCode[6],// obj position.y 
+                   curfocusObjCode[7],// obj position.z 
+                   curfocusObjCode[8],// obj angle.x
+                   curfocusObjCode[9],// obj angle.y
+                   curfocusObjCode[10]// obj angle.z
+            };            
+            bool trNewData = false;
+            for (int i = 0; i < curAction.Length; i++){
+                if (curAction[i] != lastAction[i]) { trNewData = true; break; }
+            }
+            if (trNewData) {
+                Debug.Log("0 curAction = " + string.Join(";", curAction)+ "0 lastAction = " + string.Join(";", lastAction));
+                curSnenaMotionData.userActivities.Add(new UserActivity { time = Mathf.RoundToInt(userSceneDataTime*1000), action = curAction });
+                Debug.Log("1 curAction = " + JsonUtility.ToJson(curSnenaMotionData.userActivities));
+                for (int i = 0; i < curAction.Length; i++){lastAction[i] = curAction[i];}                
+            }
         }
         if (isTimer){ // display selecting pointer
             workTime -= Time.deltaTime;
@@ -432,7 +465,7 @@ public class Main : MonoBehaviour
     }
 
      private void OnEnterTimed(string type, string name, bool isButton){
-        //Debug.Log("onEnterTimed=" + name + "=" + type);
+        //Debug.Log("onEnterTimed=" + name + "=" + type+" butt="+ isButton);
         isTimer = true;
         workTime = defaultTime;
         if (timedPointer) { timedPointer.SetFloat("_Angle", 0); }
@@ -440,21 +473,21 @@ public class Main : MonoBehaviour
         curfocusType = type;
         string[] arrName = name.Split('_');
         curfocusObjCode = new float[11] { -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-        float.TryParse(arrName[0], out curfocusObjCode[0]);
-        float.TryParse(arrName[1], out curfocusObjCode[1]);
+        float.TryParse(arrName[0], out curfocusObjCode[0]);        
         if (!isButton){
+            float.TryParse(arrName[1], out curfocusObjCode[1]);
             float.TryParse(arrName[2], out curfocusObjCode[2]);
             curfocusObjCode[3] = testsConfig[curTestIndex, 0];
             curfocusObjCode[4] = testsConfig[curTestIndex, 1];            
         }
         GameObject gm = GameObject.Find(curfocusObj);        
         if (gm) {
-            curfocusObjCode[5] = Mathf.RoundToInt(gm.transform.position.x);
-            curfocusObjCode[6] = Mathf.RoundToInt(gm.transform.position.y);
-            curfocusObjCode[7] = Mathf.RoundToInt(gm.transform.position.z);
-            curfocusObjCode[8] = Mathf.RoundToInt(gm.transform.eulerAngles.x);
-            curfocusObjCode[9] = Mathf.RoundToInt(gm.transform.eulerAngles.y);
-            curfocusObjCode[10] = Mathf.RoundToInt(gm.transform.eulerAngles.z);
+            curfocusObjCode[5] = Mathf.Round(gm.transform.position.x * 100)/100f;
+            curfocusObjCode[6] = Mathf.Round(gm.transform.position.y * 100) / 100f;
+            curfocusObjCode[7] = Mathf.Round(gm.transform.position.z * 100) / 100f;
+            curfocusObjCode[8] = Mathf.Round(gm.transform.eulerAngles.x * 100) / 100f;
+            curfocusObjCode[9] = Mathf.Round(gm.transform.eulerAngles.y * 100) / 100f;
+            curfocusObjCode[10] = Mathf.Round(gm.transform.eulerAngles.z * 100) / 100f;
         }
         //Debug.Log(name+"="+string.Join(";", curfocusObjCode));        
     }
@@ -477,10 +510,23 @@ public class Main : MonoBehaviour
         switch (curfocusType){
             case "Next":  NextScene(1);  break;
             case "Test":
-                GameObject gm = GameObject.Find(curfocusObj);
+                GameObject gm = GameObject.Find(curfocusObj);                
                 if (gm) { Destroy(gm); } else { Debug.Log("Error! Can not find object for destroy " + curfocusObj); }
+                //Debug.Log(testData.selectedObjectsList.Count + "="+ JsonUtility.ToJson(testData.selectedObjectsList));        
+                testData.selectedObjectsList[testData.selectedObjectsList.Count-1].objectsList.Add( 
+                    new TestObject() {
+                        time = Mathf.RoundToInt(userSceneDataTime*1000),
+                        location_x = curfocusObjCode[5],
+                        location_y = curfocusObjCode[6],
+                        location_z = curfocusObjCode[7],
+                        rotation_x = curfocusObjCode[8],
+                        objectTypeIndex =  curfocusObjCode[1], // cur obj type 
+                        objectColorIndex = curfocusObjCode[2], // cur obj color
+                    });
                 testsConfig[curTestIndex, 4]++;
-                if (curfocusObjCode[0]==0){ testsConfig[curTestIndex, 3]++;}
+                if (curfocusObjCode[0]==0){
+                    testsConfig[curTestIndex, 3]++;
+                }
                 if (testsConfig[curTestIndex, 4] >= testsConfig[curTestIndex, 2]) {
                     isHintDisplay = false;
                     if (TimerCanvas) { Destroy(TimerCanvas);}
@@ -498,7 +544,7 @@ public class Main : MonoBehaviour
                 } else { if (TextEmail) { TextEmail.text += curfocusObj; } }
                 break;
             case "Enter":
-                testData.email = TextEmail.text;
+                testData.userEmail = TextEmail.text;
                 NextScene(1);
                 break;
             case "Exit": sendDataToServer(); curScene = 0; NextScene(0); break;
@@ -585,7 +631,7 @@ public class Main : MonoBehaviour
             float delta = 0;
             if (item.Key.Length > 1) { width = 60 * 2; i += 1; delta = 30; }
             if (i >= len) {j++; i = 0;}
-            GameObject btKey = CreateButton(panelTransform, item.Key, item.Value, "Keyboard", "0_10_"+item.Key, new Vector3(startPosX + i * (60 + 2) - delta, startPosY - j * (60 + 2), 0), new Vector2(width, 60));            
+            GameObject btKey = CreateButton(panelTransform, item.Key, item.Value, "Keyboard", item.Key, new Vector3(startPosX + i * (60 + 2) - delta, startPosY - j * (60 + 2), 0), new Vector2(width, 60));            
             Image imgKey = btKey.GetComponent<Image>();
             imgKey.color = new Vector4(0.5f, 0.5f, 0.8f, 1);
             i++;            
@@ -635,18 +681,14 @@ public class Main : MonoBehaviour
         isDisplayTimer = false;
         SceneEventSystem.enabled = false;
         Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = false;
-        if (delta > 0)
-        {
-            Debug.Log(JsonUtility.ToJson(userSceneData));
-            //testData.snenaMotionData.Add(snenaMotionData);
-            userScenesData.Add(curScene, userSceneData);
+        Debug.Log("curScene=" + curScene +" delta="+ delta+" "+ JsonUtility.ToJson(curSnenaMotionData));
+        if (delta > 0){
+                testData.snenasMotionData.Add(curSnenaMotionData);
+                Debug.Log("JsonData=" + JsonUtility.ToJson(testData));
         }        
         curScene += delta;
         curfocusObjCode = new float[11] { -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-        userSceneData = new Dictionary<float, float[]>();
-        snenaMotionData = new SnenaMotionData();
-        snenaMotionData.sceneIndex = curScene;
-        snenaMotionData.userActivities = new UserActivities[10];
+        curSnenaMotionData = new SnenaMotionData(){sceneIndex = curScene, userActivities = new List<UserActivity>()};
         if (rootObj) { Destroy(rootObj);}
         if (TimerCanvas) { Destroy(TimerCanvas);}
         switch (curScene){
@@ -688,22 +730,15 @@ public class Main : MonoBehaviour
     private void sendDataToServer(){
         isActionSave = false;
         timerShowResult[0] = 0;
-        if (userScenesData.Count > 0){
-            Debug.Log("Json="+JsonUtility.ToJson(userScenesData, true));
-            Debug.Log("Send data to server start");
-            string jsonString = "{\"UserData\":{\"startDateTime:\""+ startDateTime + "\"},\"testResultData\":";
-            //userScenesData             
-            foreach (var keyScene in userScenesData.Keys)
-            {
-                foreach (var timeData in userScenesData[keyScene].Keys)
-                {
-                   // Debug.Log("TimeData=" + string.Join(",", userScenesData[keyScene][timeData]));
-                }
-            }
-            jsonString += "}";
+        if(testData.snenasMotionData.Count>0){            
             Debug.Log("JsonData="+JsonUtility.ToJson(testData));
-            testData = new TestData();
-            userScenesData = new Dictionary<int, Dictionary<float, float[]>>();
+            testData = new TestData(){
+                snenasMotionData = new List<SnenaMotionData>(),
+                rightObjectsList = new List<TestObjects>(),
+                selectedObjectsList = new List<TestObjects>(),
+                startDateTime = System.DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss") + " Zone=" + System.TimeZoneInfo.Local
+            };            
+            curSnenaMotionData = new SnenaMotionData() { sceneIndex = 0, userActivities = new List<UserActivity>() };                        
         }else{Debug.Log("No data send to server");}
     }
 }
