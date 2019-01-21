@@ -7,14 +7,14 @@ using UnityEngine.EventSystems;
 public class Main : MonoBehaviour
 {
     // global temp variables
-    private int curScene =2; // a current scene index
-    private int initTestTime = 20; // time limit for the second test in sec
+    private int curScene =4; // a current scene index
+    private int precisionDec = 100; // number dec after point in movement control 1 - 0, 10-0.0, 100 - 0.00
     private Sprite uisprite; // default img for text background
     private GameObject camFade; // camera Fade object
     private Font defaultFont; // defule text font
     private Text TextEmail; // user email
     EventSystem SceneEventSystem; // turn on/off eventSystem   
-    private string startDateTime = ""; // date and time the test starting
+    //private string startDateTime = ""; // date and time the test starting
     private bool isActionSave = false;     
     private float[] lastAction;
     // user data  
@@ -26,8 +26,8 @@ public class Main : MonoBehaviour
     private Material timedPointer;
     private string curfocusObj = "";
     private string curfocusType = "";
-    private float[] curfocusObjCode = new float[11] {-1,0,0,0,0,0,0,0,0,0,0 };
-    //curfocusObjCode[0]-  -1 - non avtive object, 0 - active right object, >0 - active object
+    private int[] curfocusObjCode = new int[11] {-1,0,0,0,0,0,0,0,0,0,0 };
+    //curfocusObjCode[0]-  -1 - non avtive object, 0 - active object, >0 - right active object index
     //curfocusObjCode[1]-  (0-4) cur type index of object
     //curfocusObjCode[2]-  (0-7) cur index of selected objects color    
     //curfocusObjCode[3]-  (0-4) right type index of object
@@ -45,11 +45,12 @@ public class Main : MonoBehaviour
     // variables for tests
     //{ "Cube", "Sphere", "Capsule", "Cylinder","Pyramid" };
     // {"gray","blue","green","red","yellow","purple","brown","black" }
-    private int[,] testsConfig = new int[2,5] { // testConfig[x,0] - (0-4) type index of object for search in the first test
-        { 4, 4, 5, 0, 0 }, // testConfig[x,1] - (0-7) index of selected objects color
-        { 4, 4, 5, 0, 0 }}; // testConfig[x,2] total number of objects for selection in tests
-                         // testConfig[x,3] total number of right founeded objects in a selection in test
-                         // testConfig[x,4] total number of all founeded objects in a selection test
+    private int[,] testsConfig = new int[2,6] { // testsConfig[x,0] - (0-4) type index of object for search in the first test
+        { 4, 4, 5, 0, 0, 0 }, // testsConfig[x,1] - (0-7) index of selected objects color
+        { 4, 4, 5, 0, 0, 20 }}; // testsConfig[x,2] total number of objects for selection in tests
+                               // testsConfig[x,3] total number of right founeded objects in a selection in test
+                               // testsConfig[x,4] total number of all founeded objects in a selection test
+                               // testsConfig[curTestIndex,5] time limit for the second test in sec. 0 - unlimit
     private int curTestIndex = 0; //a current test number
 
     private int nHor = 10;   // Total number of objects for 6 = 16, for 10 =32 
@@ -80,21 +81,9 @@ public class Main : MonoBehaviour
     private float aStartR;    
 
     //fixing actions time variables
-    // user actions during one scene
+    //save user actions during one scene
     private SnenaMotionData curSnenaMotionData;
-    // x - time from start scene
-    // userDataList[x][0] - head.rotation.x
-    // userDataList[x][1] - head.rotation.y
-    // userDataList[x][2] - head.rotation.z
-    // userDataList[x][3] - (>0) is ray is inside wrong object 0 - is inside right object, (-1) - is outside object
-    // userDataList[x][4] - distance between center of object and a ray
-    // userDataList[x][5] - 0-7 color of current object
-    // userDataList[x][6] - 0-4 type of current object
-    // userDataList[x][7] - 0-7 color of right object
-    // userDataList[x][8] - 0-4 type of right object
-    // User ations in all (7) scenes
     private float userSceneDataTime =0.0f; // timer data
-
     // result settings
     private float[] timerShowResult = new float[]{0f, 10f, 10f}; // timer how long wait for the result [trigger,default,current]
 
@@ -142,13 +131,11 @@ public class Main : MonoBehaviour
         for (int i = 0; i < nVer / 2; i++){
             float evalution = i * aStartV * 2.0f;
             if (1.1f < evalution && 1.9f > evalution){ // on the top put only one object
-                if (pi_0){
-                    pi_0 = false;
+                if (pi_0){ pi_0 = false;
                     locations.Add(SphericalToCartesianPlusRandom(Mathf.PI / 2f, evalution));
                 }
-            }else if (4.0f < evalution && 5.2f > evalution){ // on the bottom put only one object
-                if (pi_2){
-                    pi_2 = false;
+            }else if (4.0f < evalution && 5.2f > evalution){ // on the bottom put only one object. This is "Exit" button
+                if (pi_2){ pi_2 = false;
                     float a = 10 * Mathf.Cos(evalution);
                     btExitLoc.x = a * Mathf.Cos(Mathf.PI * 1.5f);
                     btExitLoc.y = 10 * Mathf.Sin(evalution);
@@ -161,8 +148,7 @@ public class Main : MonoBehaviour
                     locations.Add(SphericalToCartesianPlusRandom(polar, evalution));
                 }
             }
-        }
-        //Debug.Log(locations.Count + " Array of objects coor =" + string.Join(",", locations));
+        }        
         int max = locations.Count;
         //create objects for selection by a tested person
         List<int> objectTypes = new List<int>() { 0, 1, 2, 3, 4 };
@@ -172,16 +158,17 @@ public class Main : MonoBehaviour
         };        
         for (int j = 0; j < testsConfig[curTestIndex, 2]; j++){
             int newIndex = Random.Range(0, max);            
-            string name = "0_"+testsConfig[curTestIndex, 0] + "_" + testsConfig[curTestIndex, 1] + "_" + j;
-            float rot = Random.Range(0, 360);
+            string name = j+"_"+testsConfig[curTestIndex, 0] + "_" + testsConfig[curTestIndex, 1] + "_0" ;
+            int rot = Random.Range(0, 360);
             SetUpObj(testsConfig[curTestIndex, 0], name, locations[newIndex], arrColor[testsConfig[curTestIndex, 1]], rot);
             rightObjectsList.objectsList.Add(
                 new TestObject() {
+                        objectIndex = j,
                         objectColorIndex = testsConfig[curTestIndex, 1], 
                         objectTypeIndex = testsConfig[curTestIndex, 0],
-                        location_x = Mathf.Round(locations[newIndex].x*100)/100f,
-                        location_y = Mathf.Round(locations[newIndex].y * 100) / 100f,
-                        location_z = Mathf.Round(locations[newIndex].z * 100)/ 100f,
+                        location_x = Mathf.RoundToInt(locations[newIndex].x* precisionDec),
+                        location_y = Mathf.RoundToInt(locations[newIndex].y * precisionDec),
+                        location_z = Mathf.RoundToInt(locations[newIndex].z * precisionDec),
                         rotation_x = rot,
                         rotation_y = rot,
                         rotation_z = rot
@@ -193,6 +180,9 @@ public class Main : MonoBehaviour
         testData.selectedObjectsList.Add(
             new TestObjects() { 
                 testIndex = curTestIndex,
+                testTimer = testsConfig[curTestIndex, 5],
+                testingTime = 0,
+                numRightAnswers = 0,
                 objectsList = new List<TestObject>()
             });
         objectTypes.Remove(testsConfig[curTestIndex,0]);
@@ -203,18 +193,18 @@ public class Main : MonoBehaviour
             int colIndex = Random.Range(0, 8);
             Color col = arrColor[colIndex];
             int typeObj = objectTypes[Random.Range(0, 4)];            
-            string objName = cntObjs+"_"+ typeObj +"_" + colIndex + "_" + objCounter[typeObj];
+            string objName = "0_"+ typeObj +"_" + colIndex + "_" + objCounter[typeObj];
             objCounter[typeObj]++;
             cntObjs++;
             SetUpObj(typeObj, objName, loc, col, Random.Range(0, 360));
         }
-        //Debug.Log("Created objects"+string.Join(",",objCounter.ToString()));        
+        //Create "Exit" button       
         GameObject canExit = CreateCanwas("rootMenu", btExitLoc, new Vector2(100, 50));
         canExit.transform.SetParent(rootObj.transform);
         CreateButton(canExit.transform, "btExit", "Exit", "Next", "0_10_10", new Vector3(0, 0, 0), new Vector2(100, 50));
         canExit.transform.Rotate(Vector3.left, -60);
         Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = true;
-        // Create hint for tested person
+        // Create hint for a tested person
         TimerCanvas = new GameObject("Hint");
         Canvas c = TimerCanvas.AddComponent<Canvas>();
         c.renderMode = RenderMode.WorldSpace;
@@ -232,10 +222,12 @@ public class Main : MonoBehaviour
         img.color = new Vector4(1f, 1f, 1f, 1f);
         string msg = string.Format(Data.getMessage("Test_hint"), Data.getMessage("color_" + testsConfig[curTestIndex, 1]), Data.getMessage("obj_" + testsConfig[curTestIndex, 0]), 0, testsConfig[curTestIndex, 2]);
         int height = 20;
+        // Add to the hint message a timer informer
+        Debug.Log(testsConfig[curTestIndex, 5]);
         if (isShowTime){
-            msg += string.Format(Data.getMessage("Test_timer"), initTestTime);
+            msg += string.Format(Data.getMessage("Test_timer"), testsConfig[curTestIndex, 5]);
             height = 40;
-            testTime = initTestTime;
+            testTime = testsConfig[curTestIndex, 5];
         }
         RectTransform panelTransform = panel.GetComponent<RectTransform>();
         panel.transform.SetParent(NewCanvasRect, true);
@@ -250,6 +242,7 @@ public class Main : MonoBehaviour
         isDisplayTimer = isShowTime;
     }
 
+    // Set up 3d paramaters for 3d objects for a test
     void SetUpObjParams(GameObject obj, string name, Vector3 loc, Color col, float rot){
         if (obj) { 
             obj.name = name;
@@ -270,9 +263,8 @@ public class Main : MonoBehaviour
         }
     }
 
-    void SetUpObj(int typeObj, string name, Vector3 loc, Color col, float rot)
-    {
-        //Debug.Log("typeObj " + typeObj);
+    // create 3d objects for a test 
+    void SetUpObj(int typeObj, string name, Vector3 loc, Color col, float rot){
         switch (typeObj){
             case 0: SetUpObjParams(GameObject.CreatePrimitive(PrimitiveType.Cube), name, loc, col, rot); break;
             case 1: SetUpObjParams(GameObject.CreatePrimitive(PrimitiveType.Sphere), name, loc, col, rot); break;
@@ -283,6 +275,7 @@ public class Main : MonoBehaviour
         }
     }
 
+    // transform coordinates from Spherical To Cartesian and and some random parameters
     Vector3 SphericalToCartesianPlusRandom(float polar, float evalution){
         Vector3 outCart;
         float distanceR = Random.Range(distanceMin, distanceMax);
@@ -337,6 +330,7 @@ public class Main : MonoBehaviour
         mF.sharedMesh = mesh;
     }
 
+    // create a message object
     private void ShowMessage(string msg, string action, string actionLabel, Vector2 size, UnityEngine.TextAnchor anchor, Vector2 startLoc){
         rootObj = CreateCanwas("rootMenu", new Vector3(0, 1, 12), size);
         GameObject panel = new GameObject("Panel");
@@ -356,6 +350,7 @@ public class Main : MonoBehaviour
        // showTutorialsMenu(rootMenu);
     }
 
+    //create button object
     private GameObject CreateButton(Transform parent, string name, string label, string action1, string action2, Vector3 loc, Vector2 size){
         GameObject bt0 = new GameObject(name);
         RectTransform br = bt0.AddComponent<RectTransform>();
@@ -382,6 +377,7 @@ public class Main : MonoBehaviour
         return bt0;
     }
 
+    // create text object
     private GameObject CreateText(Transform parent, Vector2 loc, Vector2 size, string message, int fontSize, int fontStyle, TextAnchor achor){
         GameObject textObject = new GameObject("Text");
         textObject.transform.SetParent(parent);
@@ -407,10 +403,10 @@ public class Main : MonoBehaviour
     void Update(){        
         if (isActionSave) {
             userSceneDataTime += Time.deltaTime;
-            float[] curAction = new float[14]{
-                   Mathf.Round(Camera.main.transform.eulerAngles.x*100)/100f,
-                   Mathf.Round(Camera.main.transform.eulerAngles.y*100)/100f,
-                   Mathf.Round(Camera.main.transform.eulerAngles.z*100)/100f,
+            int[] curAction = new int[14]{
+                   Mathf.RoundToInt(Camera.main.transform.eulerAngles.x*precisionDec),
+                   Mathf.RoundToInt(Camera.main.transform.eulerAngles.y*precisionDec),
+                   Mathf.RoundToInt(Camera.main.transform.eulerAngles.z*precisionDec),
                    curfocusObjCode[0], // right or not                    
                    curfocusObjCode[1], // cur obj type 
                    curfocusObjCode[2], // cur obj color
@@ -428,9 +424,9 @@ public class Main : MonoBehaviour
                 if (curAction[i] != lastAction[i]) { trNewData = true; break; }
             }
             if (trNewData) {
-                Debug.Log("0 curAction = " + string.Join(";", curAction)+ "0 lastAction = " + string.Join(";", lastAction));
+                //Debug.Log("0 curAction = " + string.Join(";", curAction)+ "0 lastAction = " + string.Join(";", lastAction));
                 curSnenaMotionData.userActivities.Add(new UserActivity { time = Mathf.RoundToInt(userSceneDataTime*1000), action = curAction });
-                Debug.Log("1 curAction = " + JsonUtility.ToJson(curSnenaMotionData.userActivities));
+                //Debug.Log("1 curAction = " + JsonUtility.ToJson(curSnenaMotionData.userActivities));
                 for (int i = 0; i < curAction.Length; i++){lastAction[i] = curAction[i];}                
             }
         }
@@ -444,13 +440,7 @@ public class Main : MonoBehaviour
             if (isDisplayTimer){
                 testTime -= Time.deltaTime;
                 msgTimer += string.Format(Data.getMessage("Test_timer"), Mathf.Floor(testTime).ToString());
-                if (testTime < 0){
-                    isHintDisplay = false;
-                    if (TimerCanvas){
-                        Destroy(TimerCanvas);
-                        NextScene(1);
-                    }
-                }
+                if (testTime < 0){ testEnd();}
                 if (hintText) {
                     hintText.text = string.Format(Data.getMessage("Test_hint"), Data.getMessage("color_" + testsConfig[curTestIndex, 1]), Data.getMessage("obj_" + testsConfig[curTestIndex, 0]), testsConfig[curTestIndex, 4], testsConfig[curTestIndex, 2])
                         + msgTimer;
@@ -464,6 +454,7 @@ public class Main : MonoBehaviour
         }
     }
 
+    // on the cusror over an active object in a scena
      private void OnEnterTimed(string type, string name, bool isButton){
         //Debug.Log("onEnterTimed=" + name + "=" + type+" butt="+ isButton);
         isTimer = true;
@@ -472,50 +463,53 @@ public class Main : MonoBehaviour
         curfocusObj = name;
         curfocusType = type;
         string[] arrName = name.Split('_');
-        curfocusObjCode = new float[11] { -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-        float.TryParse(arrName[0], out curfocusObjCode[0]);        
+        curfocusObjCode = new int[11] { -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        int.TryParse(arrName[0], out curfocusObjCode[0]);        
         if (!isButton){
-            float.TryParse(arrName[1], out curfocusObjCode[1]);
-            float.TryParse(arrName[2], out curfocusObjCode[2]);
+            int.TryParse(arrName[1], out curfocusObjCode[1]);
+            int.TryParse(arrName[2], out curfocusObjCode[2]);
             curfocusObjCode[3] = testsConfig[curTestIndex, 0];
             curfocusObjCode[4] = testsConfig[curTestIndex, 1];            
         }
         GameObject gm = GameObject.Find(curfocusObj);        
         if (gm) {
-            curfocusObjCode[5] = Mathf.Round(gm.transform.position.x * 100)/100f;
-            curfocusObjCode[6] = Mathf.Round(gm.transform.position.y * 100) / 100f;
-            curfocusObjCode[7] = Mathf.Round(gm.transform.position.z * 100) / 100f;
-            curfocusObjCode[8] = Mathf.Round(gm.transform.eulerAngles.x * 100) / 100f;
-            curfocusObjCode[9] = Mathf.Round(gm.transform.eulerAngles.y * 100) / 100f;
-            curfocusObjCode[10] = Mathf.Round(gm.transform.eulerAngles.z * 100) / 100f;
+            curfocusObjCode[5] = Mathf.RoundToInt(gm.transform.position.x * precisionDec);
+            curfocusObjCode[6] = Mathf.RoundToInt(gm.transform.position.y * precisionDec);
+            curfocusObjCode[7] = Mathf.RoundToInt(gm.transform.position.z * precisionDec);
+            curfocusObjCode[8] = Mathf.RoundToInt(gm.transform.eulerAngles.x * precisionDec);
+            curfocusObjCode[9] = Mathf.RoundToInt(gm.transform.eulerAngles.y * precisionDec);
+            curfocusObjCode[10] = Mathf.RoundToInt(gm.transform.eulerAngles.z * precisionDec);
         }
         //Debug.Log(name+"="+string.Join(";", curfocusObjCode));        
     }
 
+    // on the cusror move out of over an active object in a scena
     private void OnExitTimed(){
         isTimer = false;
         curfocusObj = "";
         curfocusType = "";
-        curfocusObjCode = new float[11] { -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        curfocusObjCode = new int[11] { -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
         workTime = defaultTime;
         if (timedPointer) { timedPointer.SetFloat("_Angle", 360); }
     }
 
     private void OnClickTimed(){ ClickSelectEvent();}
 
+    // on the cusror timed click on an active object in a scena
     private void ClickSelectEvent(){
         isTimer = false;
         //addOevrlayInfo("clickSelectEvent" + name);
         //Debug.Log("clickSelectEvent=" + curfocusType + "="+ curfocusObj);
         switch (curfocusType){
             case "Next":  NextScene(1);  break;
-            case "Test":
+            case "Test": // test scenes activity
                 GameObject gm = GameObject.Find(curfocusObj);                
                 if (gm) { Destroy(gm); } else { Debug.Log("Error! Can not find object for destroy " + curfocusObj); }
-                //Debug.Log(testData.selectedObjectsList.Count + "="+ JsonUtility.ToJson(testData.selectedObjectsList));        
+                //Debug.Log(testData.selectedObjectsList.Count + "="+ JsonUtility.ToJson(testData.selectedObjectsList));
                 testData.selectedObjectsList[testData.selectedObjectsList.Count-1].objectsList.Add( 
                     new TestObject() {
                         time = Mathf.RoundToInt(userSceneDataTime*1000),
+                        objectIndex = curfocusObjCode[0],
                         location_x = curfocusObjCode[5],
                         location_y = curfocusObjCode[6],
                         location_z = curfocusObjCode[7],
@@ -524,26 +518,23 @@ public class Main : MonoBehaviour
                         objectColorIndex = curfocusObjCode[2], // cur obj color
                     });
                 testsConfig[curTestIndex, 4]++;
-                if (curfocusObjCode[0]==0){
-                    testsConfig[curTestIndex, 3]++;
-                }
-                if (testsConfig[curTestIndex, 4] >= testsConfig[curTestIndex, 2]) {
-                    isHintDisplay = false;
-                    if (TimerCanvas) { Destroy(TimerCanvas);}
-                    NextScene(1);
+                // if this is a right object
+                if (curfocusObjCode[0]!=0){ testsConfig[curTestIndex, 3]++; }
+                // if a testing person reach a limit of objects
+                if (testsConfig[curTestIndex, 4] >= testsConfig[curTestIndex, 2]) { testEnd();                    
                 } else { 
                     string msg = string.Format(Data.getMessage("Test_hint"), Data.getMessage("color_" + testsConfig[curTestIndex, 1]), Data.getMessage("obj_" + testsConfig[curTestIndex, 0]), testsConfig[curTestIndex, 4], testsConfig[curTestIndex, 2]);
                     if (isHintDisplay) { msg += string.Format(Data.getMessage("Test_timer"), Mathf.Floor(testTime).ToString());}
                     if (hintText) { hintText.text = msg; }
                 }
                 break;
-            case  "Keyboard":
+            case  "Keyboard": // email input scena, typing
                 if (curfocusObj.Contains("DEL")){
                     string str = TextEmail.text;
                     if (str.Length > 0) { TextEmail.text = str.Substring(0, str.Length - 1); }
                 } else { if (TextEmail) { TextEmail.text += curfocusObj; } }
                 break;
-            case "Enter":
+            case "Enter": // email input scena, finish
                 testData.userEmail = TextEmail.text;
                 NextScene(1);
                 break;
@@ -553,6 +544,7 @@ public class Main : MonoBehaviour
         OnExitTimed();
     }
 
+    // a fade transition between scenas
     IEnumerator FadeScene(float duration, bool startNewScene, Color color, string sceneName){
         if (camFade) { 
             //GameObject camFade = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -589,6 +581,7 @@ public class Main : MonoBehaviour
         } else { Debug.Log("Can not find camFade object");}
     }
 
+    // a rotate transition between scenas
     IEnumerator RotateCamera(float duration, float speedUp, string newAction){
         Transform camTransform = Camera.main.transform;            
         float progress = 300;
@@ -611,7 +604,8 @@ public class Main : MonoBehaviour
     }
     
     void StartAction(float speedUp){ StartCoroutine(RotateCamera(2f, -speedUp, "End rotation"));}
-
+    
+    // display the email input scena
     void ShowKeyboard() { // show keyboard input
         int len = 12; int width = 60; int startPosX = -342;  int startPosY = 125; int i = 0; int j = 0;
         rootObj = CreateCanwas("rootKeyoard", new Vector3(0, -3, 12), new Vector2(770, 350));
@@ -662,6 +656,7 @@ public class Main : MonoBehaviour
         TextEmail = InputText.GetComponent<Text>();        
     }
 
+    // create canavas for text messages
     GameObject CreateCanwas(string name, Vector3 loc, Vector2 size){
         GameObject objCanvas = new GameObject(name);
         Canvas c = objCanvas.AddComponent<Canvas>();
@@ -675,19 +670,17 @@ public class Main : MonoBehaviour
         return objCanvas;
     }
 
+    // switch between scenas
     void NextScene(int delta){ // switch scenes  
         isActionSave = false;
         isHintDisplay = false;
         isDisplayTimer = false;
         SceneEventSystem.enabled = false;
         Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = false;
-        Debug.Log("curScene=" + curScene +" delta="+ delta+" "+ JsonUtility.ToJson(curSnenaMotionData));
-        if (delta > 0){
-                testData.snenasMotionData.Add(curSnenaMotionData);
-                Debug.Log("JsonData=" + JsonUtility.ToJson(testData));
-        }        
+        //Debug.Log("curScene=" + curScene +" delta="+ delta+" "+ JsonUtility.ToJson(curSnenaMotionData));
+        if (delta > 0){ testData.snenasMotionData.Add(curSnenaMotionData);}        
         curScene += delta;
-        curfocusObjCode = new float[11] { -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        curfocusObjCode = new int[11] { -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
         curSnenaMotionData = new SnenaMotionData(){sceneIndex = curScene, userActivities = new List<UserActivity>()};
         if (rootObj) { Destroy(rootObj);}
         if (TimerCanvas) { Destroy(TimerCanvas);}
@@ -696,21 +689,21 @@ public class Main : MonoBehaviour
                 ShowMessage(Data.getMessage("Intro"), "Next","Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 0));
                 break;
             case 1: ShowKeyboard(); break;
-            case 2:
+            case 2: curTestIndex = 0;
                 string msg1 = string.Format(Data.getMessage("Test1"), Data.getMessage("color_"+ testsConfig[curTestIndex, 0]), Data.getMessage("obj_"+ testsConfig[curTestIndex, 0]));
                 Debug.Log("Test1=" + msg1);
                 ShowMessage(msg1, "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 0));
                 break;
-            case 3:  curTestIndex = 0;  CreateObjsArray(false); break;
-            case 4:
-                string msg2 = string.Format(Data.getMessage("Test2"), Data.getMessage("color_" + testsConfig[curTestIndex, 1]), Data.getMessage("obj_" + testsConfig[curTestIndex, 0]), initTestTime);
+            case 3: curTestIndex = 0; CreateObjsArray(false); break;
+            case 4:  curTestIndex = 1;
+                string msg2 = string.Format(Data.getMessage("Test2"), Data.getMessage("color_" + testsConfig[curTestIndex, 1]), Data.getMessage("obj_" + testsConfig[curTestIndex, 0]), testsConfig[curTestIndex, 5]);
                 ShowMessage(msg2, "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 0));
                 break;
-            case 5:  curTestIndex = 1;  CreateObjsArray(true); break;
+            case 5: curTestIndex = 1; CreateObjsArray(true); break;
             case 6:
                 timerShowResult[2] = timerShowResult[1];
-                timerShowResult[0] = 1 ;
-                string msg3 = string.Format(Data.getMessage("Result"), testsConfig[0, 3], testsConfig[0, 2], testsConfig[1, 3], testsConfig[1, 2], Mathf.Floor(initTestTime - testTime).ToString());
+                timerShowResult[0] = 1 ;                
+                string msg3 = string.Format(Data.getMessage("Result"), testsConfig[0, 3], testsConfig[0, 2], testsConfig[1, 3], testsConfig[1, 2], Mathf.Floor(testsConfig[curTestIndex, 5] - testTime).ToString());
                 ShowMessage(msg3, "Exit", "Repeat", new Vector2(1400, 400), TextAnchor.MiddleLeft, new Vector2(25,50));
                 break;
             default: Debug.Log("Not Found current scene index"); break;
@@ -720,18 +713,21 @@ public class Main : MonoBehaviour
         isActionSave = true;
     }
 
+    // on the app stop
     void OnDisable(){
         Debug.Log("PrintOnDisable: script was disabled");        
         sendDataToServer();
     }
 
+    // on the app start
     void OnEnable(){ Debug.Log("PrintOnEnable: script was enabled");}
 
+    // send data to server
     private void sendDataToServer(){
         isActionSave = false;
         timerShowResult[0] = 0;
         if(testData.snenasMotionData.Count>0){            
-            Debug.Log("JsonData="+JsonUtility.ToJson(testData));
+            Debug.Log("Sended JsonData="+JsonUtility.ToJson(testData));
             testData = new TestData(){
                 snenasMotionData = new List<SnenaMotionData>(),
                 rightObjectsList = new List<TestObjects>(),
@@ -740,5 +736,18 @@ public class Main : MonoBehaviour
             };            
             curSnenaMotionData = new SnenaMotionData() { sceneIndex = 0, userActivities = new List<UserActivity>() };                        
         }else{Debug.Log("No data send to server");}
+    }
+
+    // on finish a test
+    private void testEnd() {
+        hintText = null;
+        isHintDisplay = false;
+        if (testData.selectedObjectsList[testData.selectedObjectsList.Count - 1].testingTime == 0) { 
+            testData.selectedObjectsList[testData.selectedObjectsList.Count - 1].testingTime = Mathf.RoundToInt(userSceneDataTime * 1000);
+            testData.selectedObjectsList[testData.selectedObjectsList.Count - 1].numRightAnswers = testsConfig[curTestIndex, 3];
+            if (TimerCanvas){ Destroy(TimerCanvas); }        
+            //Debug.Log("Ended Test="+ curTestIndex+" json=" + JsonUtility.ToJson(testData));
+            NextScene(1);
+        }
     }
 }
