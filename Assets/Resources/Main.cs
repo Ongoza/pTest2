@@ -9,7 +9,10 @@ using System.IO; //save to file
 public class Main : MonoBehaviour
 {
     // global temp variables
-    private int curScene =0; // a current scene index
+    private int curScene = 0; //  start scene index 
+    private bool isDebug = false; // debug enable
+    private bool isNet = true; // network enable
+
     private int precisionDec = 100; // number dec after point in movement control 1 - 0, 10-0.0, 100 - 0.00
     private float baseLoc = 2;
     private Sprite uisprite; // default img for text background
@@ -23,11 +26,12 @@ public class Main : MonoBehaviour
     // user data  
     // objects roots for group manipulations
     private GameObject rootObj; // root of objects 
-    private Connection connection;
-    private bool isDebug = false; // debug enable
+    private Connection connection;   
     private Text TextDebug; // Debug object
-    private bool isNet = true; // connection enable
-
+    private string deviceID;
+    private string userLang = "ru";
+    private string userZone;
+    private string userEmail;
     // variables for cursor
     private float defaultTime = 1f; // time in sec focus on an obj for select
     private Material timedPointer;
@@ -101,10 +105,11 @@ public class Main : MonoBehaviour
         #if UNITY_EDITOR
             Debug.Log("Unity Editor!!!!");
             checkGyro = true;
-        #else
+#else
              checkGyro =  SystemInfo.supportsGyroscope;
-        #endif
-
+#endif
+        deviceID = SystemInfo.deviceUniqueIdentifier.ToString();
+        userZone = System.TimeZoneInfo.Local.ToString();
         if (checkGyro) { 
             camFade = GameObject.Find("camProtector");            
             if(isDebug){if(goDebug){
@@ -115,13 +120,15 @@ public class Main : MonoBehaviour
                 Destroy(goDebug);}
             logDebug("Init");
             testData = new TestData(){
-                deviceID = SystemInfo.deviceUniqueIdentifier.ToString(),
-                lang = "ru",
-                startDateTime = System.DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss") + " Zone=" + System.TimeZoneInfo.Local,
+                deviceID = deviceID,
+                lang = userLang,
+                userZone = userZone,
+                startDateTime = System.DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss"),
                 snenasMotionData = new List<SnenaMotionData>(),
                 rightObjectsList = new List<TestObjects>(),
                 selectedObjectsList = new List<TestObjects>()               
             };
+            logDebug("Start 1");
             curSnenaMotionData = new SnenaMotionData(){i = 0, act = new List<UserActivity>()};
             lastAction = new float[14];
             GameObject ObjEventSystem = GameObject.Find("GvrEventSystem");
@@ -145,17 +152,15 @@ public class Main : MonoBehaviour
             string srv = Data.getConnectionData()["ServerIP"] + ":" + Data.getConnectionData()["ServerPort"];
             //Debug.Log(string.Join(";", Data.getConnectionData()["SeverPort"]));
             connection = new Connection(srv,isNet);
-            
             // Test connection module
             //connection.putDataString("/putTest", "{'test': 'data'}");
-            string txtFromFile = "";
-            using (StreamReader streamReader = File.OpenText("c:\\11\\unityJson.txt")){txtFromFile = streamReader.ReadToEnd();}
-            Debug.Log("Start end 1");
+            // string txtFromFile = "";
+            // using (StreamReader streamReader = File.OpenText("c:\\11\\unityJson.txt")){txtFromFile = streamReader.ReadToEnd();}
+            // Debug.Log("Start end 1");
             //Debug.Log(txtFromFile);
-            TestData testData2 =  JsonUtility.FromJson<TestData>(txtFromFile);
-            connection.putDataBlob("/putVrData", testData);
-            //connection.putDataBlob("/putVrData", "{'test': 'data'}");
-
+            // TestData testData2 =  JsonUtility.FromJson<TestData>(txtFromFile);
+           // Debug.Log("Start end");
+           // connection.putDataBlob("/putVrData", testData2);
             Debug.Log("Start end");
             NextScene(0);
         }
@@ -597,10 +602,14 @@ public class Main : MonoBehaviour
                 } else { if (TextEmail) { TextEmail.text += curfocusObj; } }
                 break;
             case "Enter": // email input scena, finish
-                testData.userEmail = TextEmail.text;
+                userEmail = TextEmail.text;
+                testData.userEmail = userEmail;                 
                 NextScene(1);
                 break;
-            case "Exit": sendDataToServer(); curScene = 0; NextScene(0); break;
+            case "Exit":
+                sendDataToServer();
+                curScene = 0;
+                NextScene(0); break;
             default: Debug.Log("clickSelectEvent not found action for " + name); break;
         }
         OnExitTimed();
@@ -794,16 +803,21 @@ public class Main : MonoBehaviour
         if (testData!=null) { 
             if(testData.snenasMotionData.Count>0){
                 // Debug.Log(testData);
-                string json = JsonUtility.ToJson(testData);
+                // string json = JsonUtility.ToJson(testData);
                 // string dataPath = Path.Combine(Application.persistentDataPath, "CharacterData.txt");
-                using (StreamWriter streamWriter = File.CreateText("c:\\11\\unityJson.txt")){streamWriter.Write(json);}
+                // using (StreamWriter streamWriter = File.CreateText("c:\\11\\unityJson.txt")){streamWriter.Write(json);}
                 // Debug.Log(json);
                 connection.putDataBlob("/putVrData", testData);
                 testData = new TestData(){
+                    startDateTime = System.DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss"),
+                    deviceID = deviceID,
+                    lang = userLang,
+                    userEmail = userEmail, 
+                    userZone = userZone,
                     snenasMotionData = new List<SnenaMotionData>(),
                     rightObjectsList = new List<TestObjects>(),
-                    selectedObjectsList = new List<TestObjects>(),
-                    startDateTime = System.DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss") + " Zone=" + System.TimeZoneInfo.Local
+                    selectedObjectsList = new List<TestObjects>()
+                    
                 }; 
                 curSnenaMotionData = new SnenaMotionData() { i = 0, act = new List<UserActivity>() };                        
             }else{Debug.Log("No data send to server");}

@@ -14,9 +14,12 @@
 
 [System.Serializable] public class TestData{
     public string startDateTime;
+    public string userZone;
     public string deviceID; 
     public string userEmail;
     public string lang;
+    public string ip;
+    public string ipInfo;
     public List<TestObjects> rightObjectsList;
     public List<TestObjects> selectedObjectsList;
     public List<SnenaMotionData> snenasMotionData;    

@@ -7,9 +7,9 @@ public class Connection {
     private string serverUrl = "";
     private string deviceUUID = "unity";
     private bool connEnable = false;
-    private string ip = "";
+    public string ip = "local";
+    public string ipInfo = "";
     private string lang = "ru";
-    private string ipInfo = "";
 
     public Connection(string serverString, bool isEnable) {
         serverUrl = serverString;

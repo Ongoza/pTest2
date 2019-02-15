@@ -5,7 +5,8 @@ using System.Collections.Generic;
 public class Data {
 
     private static readonly Dictionary<string, string> connectionData = new Dictionary<string, string>() {
-        { "ServerIP", "127.0.0.1" }
+        //{ "ServerIP", "127.0.0.1" }
+        { "ServerIP", "192.168.1.100" }
         ,{ "ServerPort", "8888" }
     };
 
