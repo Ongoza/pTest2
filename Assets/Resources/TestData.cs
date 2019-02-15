@@ -16,38 +16,39 @@
     public string startDateTime;
     public string deviceID; 
     public string userEmail;
+    public string lang;
     public List<TestObjects> rightObjectsList;
     public List<TestObjects> selectedObjectsList;
     public List<SnenaMotionData> snenasMotionData;    
 }
 
 [System.Serializable] public class SnenaMotionData{
-    public int sceneIndex;
-    public List<UserActivity> userActivities;
+    public int i;
+    public List<UserActivity> act;
 }
 
 [System.Serializable] public class UserActivity{
-    public int time;
-    public int[] action;
+    public int t;
+    public int[] a;
 }
 
 [System.Serializable] public class TestObjects{
-    public int testIndex;
-    public int testTimer;
-    public int testingTime;
-    public int numRightAnswers;
-    public List<TestObject> objectsList;
+    public int i;
+    public int timer;
+    public int time;
+    public int rights;
+    public List<TestObject> objs;
 }
 
 [System.Serializable] public class TestObject{
     public int time;
-    public int objectIndex;
-    public int objectColorIndex;
-    public int objectTypeIndex;
-    public int location_x;
-    public int location_y;
-    public int location_z;
-    public int rotation_x;
-    public int rotation_y;
-    public int rotation_z;
+    public int i;
+    public int color;
+    public int type;
+    public int lx;
+    public int ly;
+    public int lz;
+    public int rx;
+    public int ry;
+    public int rz;
 }

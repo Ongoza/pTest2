@@ -4,6 +4,11 @@ using System.Collections.Generic;
 
 public class Data {
 
+    private static readonly Dictionary<string, string> connectionData = new Dictionary<string, string>() {
+        { "ServerIP", "127.0.0.1" }
+        ,{ "ServerPort", "8888" }
+    };
+
     private static readonly Dictionary<string, string> MessagesEng = new Dictionary<string, string>() {
         { "Intro", "Intro" }
         ,{ "Email", "Error Two" }
@@ -57,5 +62,7 @@ public class Data {
     }
 
     public static Dictionary<string,string> getKeys(){return KeyList;}
+
+    public static Dictionary<string, string> getConnectionData() { return connectionData; }
 
 }

@@ -4,15 +4,18 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
+using System.IO; //save to file
+
 public class Main : MonoBehaviour
 {
     // global temp variables
-    private int curScene =4; // a current scene index
+    private int curScene =0; // a current scene index
     private int precisionDec = 100; // number dec after point in movement control 1 - 0, 10-0.0, 100 - 0.00
+    private float baseLoc = 2;
     private Sprite uisprite; // default img for text background
     private GameObject camFade; // camera Fade object
     private Font defaultFont; // defule text font
-    private Text TextEmail; // user email
+    private Text TextEmail; // user email   
     EventSystem SceneEventSystem; // turn on/off eventSystem   
     //private string startDateTime = ""; // date and time the test starting
     private bool isActionSave = false;     
@@ -20,6 +23,10 @@ public class Main : MonoBehaviour
     // user data  
     // objects roots for group manipulations
     private GameObject rootObj; // root of objects 
+    private Connection connection;
+    private bool isDebug = false; // debug enable
+    private Text TextDebug; // Debug object
+    private bool isNet = true; // connection enable
 
     // variables for cursor
     private float defaultTime = 1f; // time in sec focus on an obj for select
@@ -39,7 +46,7 @@ public class Main : MonoBehaviour
     //curfocusObjCode[9]-  rotation.y to object
     //curfocusObjCode[10]-  rotation.z to object
     private float workTime;
-    private bool isTimer = false; // display select cursor 
+    private bool isTimer = true; // display select cursor 
     private TestData testData;
 
     // variables for tests
@@ -73,7 +80,7 @@ public class Main : MonoBehaviour
     private float testTime;// test time left
     private Text hintText;
     GameObject TimerCanvas; // timer object
-    private Material primitivesMaterial;    
+    public Material primitivesMaterial;    
     private int[] objCounter = new int[5] {0,0,0,0,0};    
     private int nVer;
     private float aStartH;
@@ -88,40 +95,89 @@ public class Main : MonoBehaviour
     private float[] timerShowResult = new float[]{0f, 10f, 10f}; // timer how long wait for the result [trigger,default,current]
 
     void Start(){             
-        defaultFont = Font.CreateDynamicFontFromOSFont("Roboto", 1);        
-        camFade = GameObject.Find("camProtector");
-        testData = new TestData(){
-            snenasMotionData = new List<SnenaMotionData>(),
-            rightObjectsList = new List<TestObjects>(),
-            selectedObjectsList = new List<TestObjects>(),
-            startDateTime = System.DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss") + " Zone=" + System.TimeZoneInfo.Local
-        };
-        curSnenaMotionData = new SnenaMotionData(){sceneIndex = 0, userActivities = new List<UserActivity>()};
-        lastAction = new float[14];
-        GameObject ObjEventSystem = GameObject.Find("GvrEventSystem");
-        if (ObjEventSystem){
-            SceneEventSystem = ObjEventSystem.GetComponent<EventSystem>();
-            if (SceneEventSystem) { SceneEventSystem.enabled = false;}
-        } else { Debug.Log("Can not find Event System");}
-        Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = false;
+        defaultFont = Font.CreateDynamicFontFromOSFont("Roboto", 1);
+        GameObject goDebug = GameObject.Find("txtDebug");
+        bool checkGyro = false;
+        #if UNITY_EDITOR
+            Debug.Log("Unity Editor!!!!");
+            checkGyro = true;
+        #else
+             checkGyro =  SystemInfo.supportsGyroscope;
+        #endif
 
-        uisprite = UnityEditor.AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
-        //Sprite uisprite = (Sprite) Resources.Load("UI/Skin/UISprite");
-        primitivesMaterial = new Material(Shader.Find("Specular"));
-        GameObject camTimedPointer = GameObject.Find("GvrReticlePointer");        
-        timedPointer = camTimedPointer.GetComponent<Renderer>().material;
-        nVer = nHor*2;
-        aStartH = 2 * Mathf.PI / nHor;
-        aStartV = 2 * Mathf.PI / nVer;
-        aStartR = aStartH / 4f;
-        // StartCoroutine(fadeScene(2f, true, new Color(0.2f, 0.2f, 0.2f, 1), "Main"));
-        //StartCoroutine(RotateCamera(2f, 0.0001f, "End rotation"));
-        NextScene(0);        
+        if (checkGyro) { 
+            camFade = GameObject.Find("camProtector");            
+            if(isDebug){if(goDebug){
+                    Debug.Log("Debug init");
+                    TextDebug = goDebug.GetComponent<Text>();}
+            }else{
+                Debug.Log("Debug remove");
+                Destroy(goDebug);}
+            logDebug("Init");
+            testData = new TestData(){
+                deviceID = SystemInfo.deviceUniqueIdentifier.ToString(),
+                lang = "ru",
+                startDateTime = System.DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss") + " Zone=" + System.TimeZoneInfo.Local,
+                snenasMotionData = new List<SnenaMotionData>(),
+                rightObjectsList = new List<TestObjects>(),
+                selectedObjectsList = new List<TestObjects>()               
+            };
+            curSnenaMotionData = new SnenaMotionData(){i = 0, act = new List<UserActivity>()};
+            lastAction = new float[14];
+            GameObject ObjEventSystem = GameObject.Find("GvrEventSystem");
+            if (ObjEventSystem){
+                SceneEventSystem = ObjEventSystem.GetComponent<EventSystem>();
+                if (SceneEventSystem) { SceneEventSystem.enabled = false;}
+            } else { Debug.Log("Can not find Event System");}
+            Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = false;
+            logDebug("Start 2");
+            //uisprite = UnityEditor.AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+            Texture2D tex = new Texture2D(128, 128);
+            uisprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
+            GameObject camTimedPointer = GameObject.Find("GvrReticlePointer");        
+            timedPointer = camTimedPointer.GetComponent<Renderer>().material;
+            nVer = nHor*2;
+            aStartH = 2 * Mathf.PI / nHor;
+            aStartV = 2 * Mathf.PI / nVer;
+            aStartR = aStartH / 4f;
+            // StartCoroutine(fadeScene(2f, true, new Color(0.2f, 0.2f, 0.2f, 1), "Main"));
+            //StartCoroutine(RotateCamera(2f, 0.0001f, "End rotation"));
+            string srv = Data.getConnectionData()["ServerIP"] + ":" + Data.getConnectionData()["ServerPort"];
+            //Debug.Log(string.Join(";", Data.getConnectionData()["SeverPort"]));
+            connection = new Connection(srv,isNet);
+            
+            // Test connection module
+            //connection.putDataString("/putTest", "{'test': 'data'}");
+            string txtFromFile = "";
+            using (StreamReader streamReader = File.OpenText("c:\\11\\unityJson.txt")){txtFromFile = streamReader.ReadToEnd();}
+            Debug.Log("Start end 1");
+            //Debug.Log(txtFromFile);
+            TestData testData2 =  JsonUtility.FromJson<TestData>(txtFromFile);
+            connection.putDataBlob("/putVrData", testData);
+            //connection.putDataBlob("/putVrData", "{'test': 'data'}");
+
+            Debug.Log("Start end");
+            NextScene(0);
+        }
+        else
+        {
+            TextDebug = goDebug.GetComponent<Text>();
+            TextDebug.text = "Sorry\nYour device has to have a Gyroscope ;(";
+        }
+    }
+
+    void logDebug(string msg){
+        if (isDebug){
+            if (TextDebug){
+                TextDebug.text += msg + "=>";
+            } }
     }
 
     // create objects koordinates list around the camera in random locations
     void CreateObjsArray(bool isShowTime){
+        logDebug("CreateObjsArray");
         rootObj = new GameObject("rootObj");
+        rootObj.transform.position = new Vector3(0,baseLoc,0);
         testsConfig[curTestIndex,3] = 0;
         testsConfig[curTestIndex, 4] = 0;
         // create the list of a coordinate of objects        
@@ -153,25 +209,25 @@ public class Main : MonoBehaviour
         //create objects for selection by a tested person
         List<int> objectTypes = new List<int>() { 0, 1, 2, 3, 4 };
         TestObjects rightObjectsList = new TestObjects() {
-            testIndex = curTestIndex,
-            objectsList = new List<TestObject>()
+            i = curTestIndex,
+            objs = new List<TestObject>()
         };        
         for (int j = 0; j < testsConfig[curTestIndex, 2]; j++){
             int newIndex = Random.Range(0, max);            
             string name = j+"_"+testsConfig[curTestIndex, 0] + "_" + testsConfig[curTestIndex, 1] + "_0" ;
             int rot = Random.Range(0, 360);
             SetUpObj(testsConfig[curTestIndex, 0], name, locations[newIndex], arrColor[testsConfig[curTestIndex, 1]], rot);
-            rightObjectsList.objectsList.Add(
+            rightObjectsList.objs.Add(
                 new TestObject() {
-                        objectIndex = j,
-                        objectColorIndex = testsConfig[curTestIndex, 1], 
-                        objectTypeIndex = testsConfig[curTestIndex, 0],
-                        location_x = Mathf.RoundToInt(locations[newIndex].x* precisionDec),
-                        location_y = Mathf.RoundToInt(locations[newIndex].y * precisionDec),
-                        location_z = Mathf.RoundToInt(locations[newIndex].z * precisionDec),
-                        rotation_x = rot,
-                        rotation_y = rot,
-                        rotation_z = rot
+                        i = j,
+                        color = testsConfig[curTestIndex, 1], 
+                        type = testsConfig[curTestIndex, 0],
+                        lx = Mathf.RoundToInt(locations[newIndex].x* precisionDec),
+                        ly = Mathf.RoundToInt(locations[newIndex].y * precisionDec),
+                        lz = Mathf.RoundToInt(locations[newIndex].z * precisionDec),
+                        rx = rot,
+                        ry = rot,
+                        rz = rot
                 });
             locations.RemoveAt(newIndex);
             max--;
@@ -179,11 +235,11 @@ public class Main : MonoBehaviour
         testData.rightObjectsList.Add(rightObjectsList);
         testData.selectedObjectsList.Add(
             new TestObjects() { 
-                testIndex = curTestIndex,
-                testTimer = testsConfig[curTestIndex, 5],
-                testingTime = 0,
-                numRightAnswers = 0,
-                objectsList = new List<TestObject>()
+                i = curTestIndex,
+                timer = testsConfig[curTestIndex, 5],
+                time = 0,
+                rights = 0,
+                objs = new List<TestObject>()
             });
         objectTypes.Remove(testsConfig[curTestIndex,0]);
         //Debug.Log(testData.selectedObjectsList.Count + " testData created =" + JsonUtility.ToJson(testData.selectedObjectsList));
@@ -211,7 +267,7 @@ public class Main : MonoBehaviour
         TimerCanvas.AddComponent<CanvasScaler>();
         RectTransform NewCanvasRect = TimerCanvas.GetComponent<RectTransform>();
         TimerCanvas.transform.SetParent(Camera.main.transform, true);
-        NewCanvasRect.localPosition = new Vector3(0, 3.6f, 7);
+        NewCanvasRect.localPosition = new Vector3(0, 2.8f, 7);
         NewCanvasRect.sizeDelta = new Vector2(300, 40);
         NewCanvasRect.localScale = new Vector3(0.06f, 0.06f, 1f);
         GameObject panel = new GameObject("HintPanel");
@@ -244,6 +300,7 @@ public class Main : MonoBehaviour
 
     // Set up 3d paramaters for 3d objects for a test
     void SetUpObjParams(GameObject obj, string name, Vector3 loc, Color col, float rot){
+        //logDebug("SetUpObjParams");
         if (obj) { 
             obj.name = name;
             obj.transform.SetParent(rootObj.transform);
@@ -265,6 +322,7 @@ public class Main : MonoBehaviour
 
     // create 3d objects for a test 
     void SetUpObj(int typeObj, string name, Vector3 loc, Color col, float rot){
+        //logDebug("SetUpObj");
         switch (typeObj){
             case 0: SetUpObjParams(GameObject.CreatePrimitive(PrimitiveType.Cube), name, loc, col, rot); break;
             case 1: SetUpObjParams(GameObject.CreatePrimitive(PrimitiveType.Sphere), name, loc, col, rot); break;
@@ -277,6 +335,7 @@ public class Main : MonoBehaviour
 
     // transform coordinates from Spherical To Cartesian and and some random parameters
     Vector3 SphericalToCartesianPlusRandom(float polar, float evalution){
+        logDebug("Start");
         Vector3 outCart;
         float distanceR = Random.Range(distanceMin, distanceMax);
         float evalutionR = Random.Range(evalution - aStartR, evalution + aStartR);
@@ -332,7 +391,8 @@ public class Main : MonoBehaviour
 
     // create a message object
     private void ShowMessage(string msg, string action, string actionLabel, Vector2 size, UnityEngine.TextAnchor anchor, Vector2 startLoc){
-        rootObj = CreateCanwas("rootMenu", new Vector3(0, 1, 12), size);
+        logDebug("ShowMessage");
+        rootObj = CreateCanwas("rootMenu", new Vector3(0, baseLoc, 12), size);
         GameObject panel = new GameObject("Panel");
         panel.AddComponent<CanvasRenderer>();
         Image i = panel.AddComponent<Image>();
@@ -352,6 +412,7 @@ public class Main : MonoBehaviour
 
     //create button object
     private GameObject CreateButton(Transform parent, string name, string label, string action1, string action2, Vector3 loc, Vector2 size){
+        logDebug("CreateButton");
         GameObject bt0 = new GameObject(name);
         RectTransform br = bt0.AddComponent<RectTransform>();
         br.sizeDelta = size;
@@ -379,6 +440,7 @@ public class Main : MonoBehaviour
 
     // create text object
     private GameObject CreateText(Transform parent, Vector2 loc, Vector2 size, string message, int fontSize, int fontStyle, TextAnchor achor){
+        logDebug("CreateText");
         GameObject textObject = new GameObject("Text");
         textObject.transform.SetParent(parent);
         RectTransform trans = textObject.AddComponent<RectTransform>();
@@ -425,7 +487,7 @@ public class Main : MonoBehaviour
             }
             if (trNewData) {
                 //Debug.Log("0 curAction = " + string.Join(";", curAction)+ "0 lastAction = " + string.Join(";", lastAction));
-                curSnenaMotionData.userActivities.Add(new UserActivity { time = Mathf.RoundToInt(userSceneDataTime*1000), action = curAction });
+                curSnenaMotionData.act.Add(new UserActivity { t = Mathf.RoundToInt(userSceneDataTime*1000), a = curAction });
                 //Debug.Log("1 curAction = " + JsonUtility.ToJson(curSnenaMotionData.userActivities));
                 for (int i = 0; i < curAction.Length; i++){lastAction[i] = curAction[i];}                
             }
@@ -506,16 +568,16 @@ public class Main : MonoBehaviour
                 GameObject gm = GameObject.Find(curfocusObj);                
                 if (gm) { Destroy(gm); } else { Debug.Log("Error! Can not find object for destroy " + curfocusObj); }
                 //Debug.Log(testData.selectedObjectsList.Count + "="+ JsonUtility.ToJson(testData.selectedObjectsList));
-                testData.selectedObjectsList[testData.selectedObjectsList.Count-1].objectsList.Add( 
+                testData.selectedObjectsList[testData.selectedObjectsList.Count-1].objs.Add( 
                     new TestObject() {
                         time = Mathf.RoundToInt(userSceneDataTime*1000),
-                        objectIndex = curfocusObjCode[0],
-                        location_x = curfocusObjCode[5],
-                        location_y = curfocusObjCode[6],
-                        location_z = curfocusObjCode[7],
-                        rotation_x = curfocusObjCode[8],
-                        objectTypeIndex =  curfocusObjCode[1], // cur obj type 
-                        objectColorIndex = curfocusObjCode[2], // cur obj color
+                        i = curfocusObjCode[0],
+                        lx = curfocusObjCode[5],
+                        ly = curfocusObjCode[6],
+                        lz = curfocusObjCode[7],
+                        rx = curfocusObjCode[8],
+                        type =  curfocusObjCode[1], // cur obj type 
+                        color = curfocusObjCode[2], // cur obj color
                     });
                 testsConfig[curTestIndex, 4]++;
                 // if this is a right object
@@ -546,6 +608,7 @@ public class Main : MonoBehaviour
 
     // a fade transition between scenas
     IEnumerator FadeScene(float duration, bool startNewScene, Color color, string sceneName){
+        logDebug("FadeScene");
         if (camFade) { 
             //GameObject camFade = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             camFade.GetComponent<Renderer>().enabled = true;
@@ -608,7 +671,7 @@ public class Main : MonoBehaviour
     // display the email input scena
     void ShowKeyboard() { // show keyboard input
         int len = 12; int width = 60; int startPosX = -342;  int startPosY = 125; int i = 0; int j = 0;
-        rootObj = CreateCanwas("rootKeyoard", new Vector3(0, -3, 12), new Vector2(770, 350));
+        rootObj = CreateCanwas("rootKeyoard", new Vector3(0, baseLoc - 3, 12), new Vector2(770, 350));
         GameObject panel = new GameObject("Panel");
         panel.AddComponent<CanvasRenderer>();
         Image img = panel.AddComponent<Image>();
@@ -658,6 +721,7 @@ public class Main : MonoBehaviour
 
     // create canavas for text messages
     GameObject CreateCanwas(string name, Vector3 loc, Vector2 size){
+        logDebug("CreateCanwas");
         GameObject objCanvas = new GameObject(name);
         Canvas c = objCanvas.AddComponent<Canvas>();
         c.renderMode = RenderMode.WorldSpace;
@@ -672,6 +736,7 @@ public class Main : MonoBehaviour
 
     // switch between scenas
     void NextScene(int delta){ // switch scenes  
+        logDebug("NextScene");
         isActionSave = false;
         isHintDisplay = false;
         isDisplayTimer = false;
@@ -681,7 +746,7 @@ public class Main : MonoBehaviour
         if (delta > 0){ testData.snenasMotionData.Add(curSnenaMotionData);}        
         curScene += delta;
         curfocusObjCode = new int[11] { -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-        curSnenaMotionData = new SnenaMotionData(){sceneIndex = curScene, userActivities = new List<UserActivity>()};
+        curSnenaMotionData = new SnenaMotionData(){i = curScene, act = new List<UserActivity>()};
         if (rootObj) { Destroy(rootObj);}
         if (TimerCanvas) { Destroy(TimerCanvas);}
         switch (curScene){
@@ -726,25 +791,32 @@ public class Main : MonoBehaviour
     private void sendDataToServer(){
         isActionSave = false;
         timerShowResult[0] = 0;
-        if(testData.snenasMotionData.Count>0){            
-            Debug.Log("Sended JsonData="+JsonUtility.ToJson(testData));
-            testData = new TestData(){
-                snenasMotionData = new List<SnenaMotionData>(),
-                rightObjectsList = new List<TestObjects>(),
-                selectedObjectsList = new List<TestObjects>(),
-                startDateTime = System.DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss") + " Zone=" + System.TimeZoneInfo.Local
-            };            
-            curSnenaMotionData = new SnenaMotionData() { sceneIndex = 0, userActivities = new List<UserActivity>() };                        
-        }else{Debug.Log("No data send to server");}
+        if (testData!=null) { 
+            if(testData.snenasMotionData.Count>0){
+                // Debug.Log(testData);
+                string json = JsonUtility.ToJson(testData);
+                // string dataPath = Path.Combine(Application.persistentDataPath, "CharacterData.txt");
+                using (StreamWriter streamWriter = File.CreateText("c:\\11\\unityJson.txt")){streamWriter.Write(json);}
+                // Debug.Log(json);
+                connection.putDataBlob("/putVrData", testData);
+                testData = new TestData(){
+                    snenasMotionData = new List<SnenaMotionData>(),
+                    rightObjectsList = new List<TestObjects>(),
+                    selectedObjectsList = new List<TestObjects>(),
+                    startDateTime = System.DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss") + " Zone=" + System.TimeZoneInfo.Local
+                }; 
+                curSnenaMotionData = new SnenaMotionData() { i = 0, act = new List<UserActivity>() };                        
+            }else{Debug.Log("No data send to server");}
+        }
     }
 
     // on finish a test
     private void testEnd() {
         hintText = null;
         isHintDisplay = false;
-        if (testData.selectedObjectsList[testData.selectedObjectsList.Count - 1].testingTime == 0) { 
-            testData.selectedObjectsList[testData.selectedObjectsList.Count - 1].testingTime = Mathf.RoundToInt(userSceneDataTime * 1000);
-            testData.selectedObjectsList[testData.selectedObjectsList.Count - 1].numRightAnswers = testsConfig[curTestIndex, 3];
+        if (testData.selectedObjectsList[testData.selectedObjectsList.Count - 1].time == 0) { 
+            testData.selectedObjectsList[testData.selectedObjectsList.Count - 1].time = Mathf.RoundToInt(userSceneDataTime * 1000);
+            testData.selectedObjectsList[testData.selectedObjectsList.Count - 1].rights = testsConfig[curTestIndex, 3];
             if (TimerCanvas){ Destroy(TimerCanvas); }        
             //Debug.Log("Ended Test="+ curTestIndex+" json=" + JsonUtility.ToJson(testData));
             NextScene(1);
