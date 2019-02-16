@@ -8,6 +8,7 @@ using System.IO; //save to file
 
 public class Main : MonoBehaviour
 {
+    // Указатель на кнопку выход
     // global temp variables
     private int curScene = 0; //  start scene index 
     private bool isDebug = false; // debug enable
@@ -56,8 +57,8 @@ public class Main : MonoBehaviour
     // variables for tests
     //{ "Cube", "Sphere", "Capsule", "Cylinder","Pyramid" };
     // {"gray","blue","green","red","yellow","purple","brown","black" }
-    private int[,] testsConfig = new int[2,6] { // testsConfig[x,0] - (0-4) type index of object for search in the first test
-        { 4, 4, 5, 0, 0, 0 }, // testsConfig[x,1] - (0-7) index of selected objects color
+    private int[,] testsConfig = new int[2,6] { // testsConfig[x,0] - (0-4) type index of an object for search in the first test
+        { 4, 4, 5, 0, 0, 0 }, // testsConfig[x,1] - (0-7) index of a selected object color
         { 4, 4, 5, 0, 0, 20 }}; // testsConfig[x,2] total number of objects for selection in tests
                                // testsConfig[x,3] total number of right founeded objects in a selection in test
                                // testsConfig[x,4] total number of all founeded objects in a selection test
@@ -103,7 +104,7 @@ public class Main : MonoBehaviour
         GameObject goDebug = GameObject.Find("txtDebug");
         bool checkGyro = false;
         #if UNITY_EDITOR
-            Debug.Log("Unity Editor!!!!");
+            //Debug.Log("Unity Editor!!!!");
             checkGyro = true;
 #else
              checkGyro =  SystemInfo.supportsGyroscope;
@@ -112,12 +113,8 @@ public class Main : MonoBehaviour
         userZone = System.TimeZoneInfo.Local.ToString();
         if (checkGyro) { 
             camFade = GameObject.Find("camProtector");            
-            if(isDebug){if(goDebug){
-                    Debug.Log("Debug init");
-                    TextDebug = goDebug.GetComponent<Text>();}
-            }else{
-                Debug.Log("Debug remove");
-                Destroy(goDebug);}
+            if(isDebug){if(goDebug){ TextDebug = goDebug.GetComponent<Text>();}
+            }else{Destroy(goDebug);}
             logDebug("Init");
             testData = new TestData(){
                 deviceID = deviceID,
@@ -217,10 +214,11 @@ public class Main : MonoBehaviour
             i = curTestIndex,
             objs = new List<TestObject>()
         };        
-        for (int j = 0; j < testsConfig[curTestIndex, 2]; j++){
+        for (int j = 1; j < testsConfig[curTestIndex, 2]+1; j++){
             int newIndex = Random.Range(0, max);            
             string name = j+"_"+testsConfig[curTestIndex, 0] + "_" + testsConfig[curTestIndex, 1] + "_0" ;
             int rot = Random.Range(0, 360);
+            //Debug.Log("created right "+name);
             SetUpObj(testsConfig[curTestIndex, 0], name, locations[newIndex], arrColor[testsConfig[curTestIndex, 1]], rot);
             rightObjectsList.objs.Add(
                 new TestObject() {
@@ -284,7 +282,7 @@ public class Main : MonoBehaviour
         string msg = string.Format(Data.getMessage("Test_hint"), Data.getMessage("color_" + testsConfig[curTestIndex, 1]), Data.getMessage("obj_" + testsConfig[curTestIndex, 0]), 0, testsConfig[curTestIndex, 2]);
         int height = 20;
         // Add to the hint message a timer informer
-        Debug.Log(testsConfig[curTestIndex, 5]);
+        //Debug.Log(testsConfig[curTestIndex, 5]);
         if (isShowTime){
             msg += string.Format(Data.getMessage("Test_timer"), testsConfig[curTestIndex, 5]);
             height = 40;
@@ -333,7 +331,9 @@ public class Main : MonoBehaviour
             case 1: SetUpObjParams(GameObject.CreatePrimitive(PrimitiveType.Sphere), name, loc, col, rot); break;
             case 2: SetUpObjParams(GameObject.CreatePrimitive(PrimitiveType.Capsule), name, loc, col, rot); break;
             case 3: SetUpObjParams(GameObject.CreatePrimitive(PrimitiveType.Cylinder), name, loc, col, rot); break;
-            case 4: SetUpObjParams(CreatPyramid3(), name, loc, col, rot); break;
+            case 4:
+                //Debug.Log("created 2 right " + name);
+                SetUpObjParams(CreatPyramid3(), name, loc, col, rot); break;
             default: print("Error!!! Incorrect obj type."); break;
         }
     }
@@ -411,7 +411,7 @@ public class Main : MonoBehaviour
         panelTransform.sizeDelta = size;
         //panelTransform.rotation = Quaternion.AngleAxis(-180, Vector3.up);        
         CreateText(panelTransform, startLoc, size, msg, 50, 0, anchor);
-        CreateButton(panelTransform, "Button", actionLabel, action,"0_10_10",new Vector3(0, 60-size.y/2, 0), new Vector2(300,50));
+        CreateButton(panelTransform, "Button", actionLabel, action,"0_10_10",new Vector3(0, 60-size.y/2, 0), new Vector2(300,60));
        // showTutorialsMenu(rootMenu);
     }
 
@@ -585,15 +585,18 @@ public class Main : MonoBehaviour
                         color = curfocusObjCode[2], // cur obj color
                     });
                 testsConfig[curTestIndex, 4]++;
-                // if this is a right object
+                // if this is a right object                
                 if (curfocusObjCode[0]!=0){ testsConfig[curTestIndex, 3]++; }
+                //Debug.Log("obj:"+ curfocusObj + " result right:" + testsConfig[curTestIndex, 3] + " total:" + testsConfig[curTestIndex, 4]);
                 // if a testing person reach a limit of objects
-                if (testsConfig[curTestIndex, 4] >= testsConfig[curTestIndex, 2]) { testEnd();                    
+                if (testsConfig[curTestIndex, 4] >= testsConfig[curTestIndex, 2]) {
+                    testEnd();                    
                 } else { 
                     string msg = string.Format(Data.getMessage("Test_hint"), Data.getMessage("color_" + testsConfig[curTestIndex, 1]), Data.getMessage("obj_" + testsConfig[curTestIndex, 0]), testsConfig[curTestIndex, 4], testsConfig[curTestIndex, 2]);
                     if (isHintDisplay) { msg += string.Format(Data.getMessage("Test_timer"), Mathf.Floor(testTime).ToString());}
                     if (hintText) { hintText.text = msg; }
                 }
+               // Debug.Log("result2: right:"+testsConfig[curTestIndex, 3] + " total:"+testsConfig[curTestIndex, 4]);
                 break;
             case  "Keyboard": // email input scena, typing
                 if (curfocusObj.Contains("DEL")){
@@ -667,7 +670,7 @@ public class Main : MonoBehaviour
             smooth += speedUp;
             newAngle += angleDelta;
             Quaternion target = Quaternion.Euler(newAngle, newAngle, newAngle);
-            Debug.Log(progress + " " + smooth);            
+            //Debug.Log(progress + " " + smooth);            
             transform.rotation = Quaternion.Slerp(transform.rotation, target, smooth);
             yield return null; 
         }        
@@ -680,7 +683,7 @@ public class Main : MonoBehaviour
     // display the email input scena
     void ShowKeyboard() { // show keyboard input
         int len = 12; int width = 60; int startPosX = -342;  int startPosY = 125; int i = 0; int j = 0;
-        rootObj = CreateCanwas("rootKeyoard", new Vector3(0, baseLoc - 3, 12), new Vector2(770, 350));
+        rootObj = CreateCanwas("rootKeyoard", new Vector3(0,  -3, 12), new Vector2(770, 350));
         GameObject panel = new GameObject("Panel");
         panel.AddComponent<CanvasRenderer>();
         Image img = panel.AddComponent<Image>();
@@ -707,13 +710,13 @@ public class Main : MonoBehaviour
         InputMsg.transform.SetParent(rootObj.transform);
         RectTransform brInputMsg = InputMsg.AddComponent<RectTransform>();
         brInputMsg.localScale = new Vector3(1f, 1f, 1f);
-        brInputMsg.sizeDelta = new Vector2(800, 140);
-        brInputMsg.localPosition = new Vector3(0, 330, 0);
+        brInputMsg.sizeDelta = new Vector2(800, 240);
+        brInputMsg.localPosition = new Vector3(0, 360, 0);
         Image imgInputMsg = InputMsg.AddComponent<Image>();
         imgInputMsg.sprite = uisprite;
         imgInputMsg.color = new Vector4(0.8f, 0.8f, 0.8f, 1);
         imgInputMsg.type = Image.Type.Sliced;
-        CreateText(brInputMsg, new Vector2(0, 1f), new Vector2(800, 130), Data.getMessage("Email"), 40, 1, TextAnchor.MiddleCenter);   
+        CreateText(brInputMsg, new Vector2(0, 1f), new Vector2(800, 180), Data.getMessage("Email"), 40, 1, TextAnchor.MiddleCenter);   
         GameObject Input = new GameObject("Input");
         Input.transform.SetParent(rootObj.transform);
         RectTransform brInput = Input.AddComponent<RectTransform>();
@@ -760,16 +763,20 @@ public class Main : MonoBehaviour
         if (TimerCanvas) { Destroy(TimerCanvas);}
         switch (curScene){
             case 0:                
-                ShowMessage(Data.getMessage("Intro"), "Next","Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 0));
+                ShowMessage(Data.getMessage("Intro"), "Next","Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
                 break;
             case 1: ShowKeyboard(); break;
             case 2: curTestIndex = 0;
                 string msg1 = string.Format(Data.getMessage("Test1"), Data.getMessage("color_"+ testsConfig[curTestIndex, 0]), Data.getMessage("obj_"+ testsConfig[curTestIndex, 0]));
-                Debug.Log("Test1=" + msg1);
-                ShowMessage(msg1, "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 0));
+                //Debug.Log("Test1=" + msg1);
+                ShowMessage(msg1, "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
                 break;
-            case 3: curTestIndex = 0; CreateObjsArray(false); break;
-            case 4:  curTestIndex = 1;
+            case 3:
+                curTestIndex = 0;
+                CreateObjsArray(false);
+                break;
+            case 4:                
+                curTestIndex = 1;
                 string msg2 = string.Format(Data.getMessage("Test2"), Data.getMessage("color_" + testsConfig[curTestIndex, 1]), Data.getMessage("obj_" + testsConfig[curTestIndex, 0]), testsConfig[curTestIndex, 5]);
                 ShowMessage(msg2, "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 0));
                 break;
@@ -778,7 +785,7 @@ public class Main : MonoBehaviour
                 timerShowResult[2] = timerShowResult[1];
                 timerShowResult[0] = 1 ;                
                 string msg3 = string.Format(Data.getMessage("Result"), testsConfig[0, 3], testsConfig[0, 2], testsConfig[1, 3], testsConfig[1, 2], Mathf.Floor(testsConfig[curTestIndex, 5] - testTime).ToString());
-                ShowMessage(msg3, "Exit", "Repeat", new Vector2(1400, 400), TextAnchor.MiddleLeft, new Vector2(25,50));
+                ShowMessage(msg3, "Exit", "Repeat", new Vector2(1400, 600), TextAnchor.MiddleLeft, new Vector2(25,50));
                 break;
             default: Debug.Log("Not Found current scene index"); break;
         }
@@ -789,12 +796,13 @@ public class Main : MonoBehaviour
 
     // on the app stop
     void OnDisable(){
-        Debug.Log("PrintOnDisable: script was disabled");        
+        //Debug.Log("PrintOnDisable: script was disabled");        
         sendDataToServer();
     }
 
     // on the app start
-    void OnEnable(){ Debug.Log("PrintOnEnable: script was enabled");}
+    void OnEnable(){ //Debug.Log("PrintOnEnable: script was enabled");
+    }
 
     // send data to server
     private void sendDataToServer(){
