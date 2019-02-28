@@ -5,9 +5,9 @@ using System.Collections.Generic;
 public class Data {
 
     private static readonly Dictionary<string, string> connectionData = new Dictionary<string, string>() {
-        //{ "ServerIP", "127.0.0.1" }
+        { "ServerIP", "127.0.0.1" }
        // { "ServerIP", "192.168.1.100" }
-        { "ServerIP", "91.212.177.22" }
+       // { "ServerIP", "91.212.177.22" }
         ,{ "ServerPort", "8888" }
     };
 
@@ -21,6 +21,7 @@ public class Data {
 
     private static readonly Dictionary<string, string> MessagesRus = new Dictionary<string, string>() {
         { "Intro", "<size=80><b>Тест:  определение темперамента</b></size>" }
+        ,{ "Gyro","Извините\nВаше устройство не имеет гироскопа. " } // Sorry\nYour device has to have a Gyroscope
         ,{ "Email", "<b>Введите ваш email.</b>\n<size=40>На этот адрес Вам будет отправлена ссылка на окончание теста.</size>" }
         ,{ "Test1", "Найдите все <b>{0} {1}</b> вокруг вас.\n\n<size=40>После выполнения нажмите кнопку <Exit>,\nкоторая расположена внизу.</size>" }
         ,{ "Test_hint", "Найти <b>{0} {1}</b>. Выбрано <b>{2}/{3}</b>" }

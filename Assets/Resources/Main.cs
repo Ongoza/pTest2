@@ -6,6 +6,31 @@ using UnityEngine.EventSystems;
 
 using System.IO; //save to file
 
+//Сделать цветовой тест в виде класса на текущей сцене
+//Добавить цветовой тест в конце теста
+//выводить опросник Айзенка - сокращенный до 30-40 вопросов
+//(по 15-20 на каждую шкалу)
+//Выводить результаты
+//  - уровень темперамента в трех шкалах(флегметик 40% сангвиник 60% устойчивость - 20%)
+// - уровень стресса и эффективность
+//- выбор цвета фигуры для поиска  
+//- выбор формы фигуры для поиска
+
+//переключение языков и определения языка системы Application.systemLanguage
+//Изображение пирамиды в задании
+//Сделать ограничение по времени записи движений для каждой сцены (15 сек на сцену)
+//Сделать ограничение по времени на нахождение без движения и выход(1 минуту на одной сцене через меню подтверждения выхода (15 сек))
+//Сделать стрелку указатель на текстовое сообщение
+//Сделать заставку с анимацитей ввода текста(Психологические тесты) и появление 3д модели VR
+
+//Поправить проверку на гиро и девайс инфо
+
+//сделать страницу для отображения результата  - сделал
+//Кнопки в тестовом тесте больше сделать - сделал
+//Не показывает на других компьютерах - проверить!!!
+//ограничение на размер записи - сделал
+//Got a packet bigger than 'max_allowed_packet' bytes"  
+
 public class Main : MonoBehaviour
 {
     // Указатель на кнопку выход
@@ -81,6 +106,8 @@ public class Main : MonoBehaviour
     };    
     private Vector3 btExitLoc;    
     private bool isHintDisplay = false; // display hint during a test
+    private int checkGyro = 0;
+    private string deviceDesc;
     private bool isDisplayTimer = false;// display timer during a test
     private float testTime;// test time left
     private Text hintText;
@@ -102,72 +129,106 @@ public class Main : MonoBehaviour
     void Start(){             
         defaultFont = Font.CreateDynamicFontFromOSFont("Roboto", 1);
         GameObject goDebug = GameObject.Find("txtDebug");
-        bool checkGyro = false;
+        checkGyro = 0;
         #if UNITY_EDITOR
-            //Debug.Log("Unity Editor!!!!");
-            checkGyro = true;
-#else
-             checkGyro =  SystemInfo.supportsGyroscope;
-#endif
+            Debug.Log("Unity Editor!!!!");
+            checkGyro = 1;
+        #else
+        if( SystemInfo.supportsGyroscope){checkGyro = 1;}
+        #endif
         deviceID = SystemInfo.deviceUniqueIdentifier.ToString();
         userZone = System.TimeZoneInfo.Local.ToString();
-        if (checkGyro) { 
-            camFade = GameObject.Find("camProtector");            
-            if(isDebug){if(goDebug){ TextDebug = goDebug.GetComponent<Text>();}
-            }else{Destroy(goDebug);}
-            logDebug("Init");
-            testData = new TestData(){
-                deviceID = deviceID,
-                lang = userLang,
-                userZone = userZone,
-                startDateTime = System.DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss"),
-                snenasMotionData = new List<SnenaMotionData>(),
-                rightObjectsList = new List<TestObjects>(),
-                selectedObjectsList = new List<TestObjects>()               
-            };
-            logDebug("Start 1");
-            curSnenaMotionData = new SnenaMotionData(){i = 0, act = new List<UserActivity>()};
-            lastAction = new float[14];
-            GameObject ObjEventSystem = GameObject.Find("GvrEventSystem");
-            if (ObjEventSystem){
-                SceneEventSystem = ObjEventSystem.GetComponent<EventSystem>();
-                if (SceneEventSystem) { SceneEventSystem.enabled = false;}
-            } else { Debug.Log("Can not find Event System");}
-            Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = false;
-            logDebug("Start 2");
-            //uisprite = UnityEditor.AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
-            Texture2D tex = new Texture2D(128, 128);
-            uisprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
-            GameObject camTimedPointer = GameObject.Find("GvrReticlePointer");        
-            timedPointer = camTimedPointer.GetComponent<Renderer>().material;
-            nVer = nHor*2;
-            aStartH = 2 * Mathf.PI / nHor;
-            aStartV = 2 * Mathf.PI / nVer;
-            aStartR = aStartH / 4f;
-            // StartCoroutine(fadeScene(2f, true, new Color(0.2f, 0.2f, 0.2f, 1), "Main"));
-            //StartCoroutine(RotateCamera(2f, 0.0001f, "End rotation"));
-            string srv = Data.getConnectionData()["ServerIP"] + ":" + Data.getConnectionData()["ServerPort"];
-            //Debug.Log(string.Join(";", Data.getConnectionData()["SeverPort"]));
-            connection = new Connection(srv,isNet);
-            // Test connection module
-            //connection.putDataString("/putTest", "{'test': 'data'}");
-            // string txtFromFile = "";
-            // using (StreamReader streamReader = File.OpenText("c:\\11\\unityJson.txt")){txtFromFile = streamReader.ReadToEnd();}
-            // Debug.Log("Start end 1");
-            //Debug.Log(txtFromFile);
-            // TestData testData2 =  JsonUtility.FromJson<TestData>(txtFromFile);
-           // Debug.Log("Start end");
-           // connection.putDataBlob("/putVrData", testData2);
-            Debug.Log("Start end");
-            NextScene(0);
-        }
-        else
-        {
+        //userLang =  Application.systemLanguage.ToString();
+        //Debug.Log("userLang="+userLang);
+        if (checkGyro>0) {Init(goDebug);
+        }else{
             TextDebug = goDebug.GetComponent<Text>();
-            TextDebug.text = "Sorry\nYour device has to have a Gyroscope ;(";
+            TextDebug.text = Data.getMessage("Gyro");
+            StartCoroutine(PauseInit(7, goDebug));
         }
     }
 
+    void Init(GameObject goDebug) {
+        camFade = GameObject.Find("camProtector");
+        if (isDebug)
+        {
+            if (goDebug) { TextDebug = goDebug.GetComponent<Text>(); }
+        }
+        else { Destroy(goDebug); }
+        try
+        {
+            deviceDesc = "#_"+SystemInfo.deviceModel+",#_"+ SystemInfo.deviceType + ",#_" + SystemInfo.deviceName + ",#_" + SystemInfo.operatingSystem;
+            Debug.Log(deviceDesc);
+        }
+        catch (System.Exception e)
+        {
+            Debug.Log(e);
+        }
+            
+        logDebug("Init");
+        testData = new TestData()
+        {
+            deviceID = deviceID,
+            lang = userLang,
+            gyro = checkGyro,
+            deviceInfo = deviceDesc,
+            userZone = userZone,
+            startDateTime = System.DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss"),
+            snenasMotionData = new List<SnenaMotionData>(),
+            rightObjectsList = new List<TestObjects>(),
+            selectedObjectsList = new List<TestObjects>()
+        };
+        logDebug("Start 1");
+        curSnenaMotionData = new SnenaMotionData() { i = 0, act = new List<UserActivity>() };
+        lastAction = new float[14];
+        GameObject ObjEventSystem = GameObject.Find("GvrEventSystem");
+        if (ObjEventSystem)
+        {
+            SceneEventSystem = ObjEventSystem.GetComponent<EventSystem>();
+            if (SceneEventSystem) { SceneEventSystem.enabled = false; }
+        }
+        else { Debug.Log("Can not find Event System"); }
+        Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = false;
+        logDebug("Start 2");
+        //uisprite = UnityEditor.AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+        Texture2D tex = new Texture2D(128, 128);
+        uisprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
+        GameObject camTimedPointer = GameObject.Find("GvrReticlePointer");
+        timedPointer = camTimedPointer.GetComponent<Renderer>().material;
+        nVer = nHor * 2;
+        aStartH = 2 * Mathf.PI / nHor;
+        aStartV = 2 * Mathf.PI / nVer;
+        aStartR = aStartH / 4f;
+        // StartCoroutine(fadeScene(2f, true, new Color(0.2f, 0.2f, 0.2f, 1), "Main"));
+        //StartCoroutine(RotateCamera(2f, 0.0001f, "End rotation"));
+        string srv = Data.getConnectionData()["ServerIP"] + ":" + Data.getConnectionData()["ServerPort"];
+        //Debug.Log(string.Join(";", Data.getConnectionData()["SeverPort"]));
+        connection = new Connection(srv, isNet);
+        // Test connection module
+        //connection.putDataString("/putTest", "{'test': 'data'}");
+        // string txtFromFile = "";
+        // using (StreamReader streamReader = File.OpenText("c:\\11\\unityJson.txt")){txtFromFile = streamReader.ReadToEnd();}
+        // Debug.Log("Start end 1");
+        //Debug.Log(txtFromFile);
+        // TestData testData2 =  JsonUtility.FromJson<TestData>(txtFromFile);
+        // Debug.Log("Start end");
+        // connection.putDataBlob("/putVrData", testData2);
+        Debug.Log("Start end");
+        NextScene(0);
+    }
+
+
+    public IEnumerator PauseInit(float timer, GameObject goDebug)
+    {
+        float currCountdownValue = timer;
+        while (currCountdownValue > 0)
+        {
+            Debug.Log("Countdown: " + currCountdownValue);
+            yield return new WaitForSeconds(1.0f);
+            currCountdownValue--;
+        }
+        Init(goDebug);
+    }
     void logDebug(string msg){
         if (isDebug){
             if (TextDebug){
@@ -467,7 +528,11 @@ public class Main : MonoBehaviour
         return textObject;
     }
 
-    void Update(){        
+    void Update(){
+        //if (Input.GetKeyDown(KeyCode.Escape)){
+        //    // Android close icon or back button tapped.
+        //    Application.Quit();
+        //}
         if (isActionSave) {
             userSceneDataTime += Time.deltaTime;
             int[] curAction = new int[14]{
@@ -820,6 +885,8 @@ public class Main : MonoBehaviour
                     startDateTime = System.DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss"),
                     deviceID = deviceID,
                     lang = userLang,
+                    gyro = checkGyro,
+                    deviceInfo = deviceDesc,
                     userEmail = userEmail, 
                     userZone = userZone,
                     snenasMotionData = new List<SnenaMotionData>(),

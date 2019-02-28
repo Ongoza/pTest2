@@ -19,7 +19,9 @@
     public string userEmail;
     public string lang;
     public string ip;
+    public int gyro;
     public string ipInfo;
+    public string deviceInfo;
     public List<TestObjects> rightObjectsList;
     public List<TestObjects> selectedObjectsList;
     public List<SnenaMotionData> snenasMotionData;    
