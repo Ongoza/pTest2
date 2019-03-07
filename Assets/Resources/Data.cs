@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-
+using UnityEngine;
 
 public class Data {
 
@@ -21,6 +21,8 @@ public class Data {
 
     private static readonly Dictionary<string, string> MessagesRus = new Dictionary<string, string>() {
         { "Intro", "<size=80><b>Тест:  определение темперамента</b></size>" }
+        ,{ "selOneCol", "<b>Выберите самый любимый цвет</b>" }
+        ,{ "selAllCol", "<b>Выберите один за одним цвета, которые нравятся больше всего</b>" }
         ,{ "Gyro","Извините\nВаше устройство не имеет гироскопа. " } // Sorry\nYour device has to have a Gyroscope
         ,{ "Email", "<b>Введите ваш email.</b>\n<size=40>На этот адрес Вам будет отправлена ссылка на окончание теста.</size>" }
         ,{ "Test1", "Найдите все <b>{0} {1}</b> вокруг вас.\n\n<size=40>После выполнения нажмите кнопку <Exit>,\nкоторая расположена внизу.</size>" }
@@ -56,20 +58,31 @@ public class Data {
          //,{ " ", "          " },{ "SHIFT", "SHIFT" }
     };
 
-    public static string getMessage(string key)
+    public static string getMessage(string lang, string key)
     {string result = "";
-        if (MessagesRus.ContainsKey(key)) { result = MessagesRus[key];}
+        if (Messages[lang].ContainsKey(key)) { result = Messages[lang][key];}
         return result;
     }
 
-    public static string getKey(string key)
+    public static string getKey(string lang, string key)
     {string result = "";
-        if (MessagesRus.ContainsKey(key)){ result =  KeyList[key];}
+        if (Messages[lang].ContainsKey(key)){ result =  KeyList[key];}
         return result;
     }
 
     public static Dictionary<string,string> getKeys(){return KeyList;}
 
     public static Dictionary<string, string> getConnectionData() { return connectionData; }
+
+    private static readonly Dictionary<string, Dictionary<string, string>> Messages = new Dictionary<string, Dictionary<string, string>>() {
+        { "Russian", MessagesRus},
+        { "English", MessagesEng},
+    };
+
+    public static bool isLanguge(string key){
+        bool result = false;
+        if (Messages.ContainsKey(key)){result = true;}
+        return result;
+    }
 
 }
