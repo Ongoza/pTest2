@@ -6,41 +6,22 @@ using UnityEngine.EventSystems;
 
 using System.IO; //save to file
 
-//Сделать цветовой тест в виде класса на текущей сцене
-//Добавить цветовой тест в конце теста
 //выводить опросник Айзенка - сокращенный до 30-40 вопросов
 //(по 15-20 на каждую шкалу)
 //Выводить результаты
 //  - уровень темперамента в трех шкалах(флегметик 40% сангвиник 60% устойчивость - 20%)
-// - уровень стресса и эффективность
-//- выбор цвета фигуры для поиска  
-//- выбор формы фигуры для поиска
-
-//переключение языков и определения языка системы Application.systemLanguage
-//Изображение пирамиды в задании
+// - уровень стресса и эффективность, темперамент
+//переключение языков 
 //Сделать ограничение по времени записи движений для каждой сцены (15 сек на сцену)
 //Сделать ограничение по времени на нахождение без движения и выход(1 минуту на одной сцене через меню подтверждения выхода (15 сек))
 //Сделать стрелку указатель на текстовое сообщение
 //Сделать заставку с анимацитей ввода текста(Психологические тесты) и появление 3д модели VR
-
-//Поправить проверку на гиро и девайс инфо
-
-//сделать страницу для отображения результата  - сделал
-//Кнопки в тестовом тесте больше сделать - сделал
-//Не показывает на других компьютерах - проверить!!!
-//ограничение на размер записи - сделал
-//Got a packet bigger than 'max_allowed_packet' bytes"  
-
-//Возможность изменения точки появления сообщений
-//Возможность идентификации и смены языка
-//Добавить выбор цвета и формы фигуры
-//Сервер и БД
+//Поправить проверку на гиро и девайс инфо  
 //Окно информации о разработчике и цели проекта
 //Заставка
 
 public class Main : MonoBehaviour
 {
-    // Указатель на кнопку выход
     // global temp variables
     private int curScene = 0; //  start scene index 
     private bool isDebug = false; // VR debug enable
@@ -436,6 +417,8 @@ public class Main : MonoBehaviour
        // StartAction(speedUp);
     }
     
+    
+
     void StartAction(float speedUp){ StartCoroutine(RotateCamera(2f, -speedUp, "End rotation"));}  
 
     // switch between scenas
@@ -462,48 +445,53 @@ public class Main : MonoBehaviour
                 break;
             case 2: // start select a color
                 rootObj = colorTest.showColors("selOneCol");
-                
-                //rootObj = utility.ShowMessage(Data.getMessage("SelectOneColor"), "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));                
+                string msg = Data.getMessage(userLang, "selOneCol");
+                GameObject msgObj = utility.ShowMessage(msg, "", "Start", new Vector2(1200, 100), TextAnchor.MiddleCenter, new Vector2(0, 10));
+                msgObj.transform.SetParent(rootObj.transform);
+                msgObj.transform.position = new Vector3(0,4.4f,16);
                 break;
-            case 3: //  start select a model 
-                rootObj = utility.ShowMessage(Data.getMessage(userLang, "Intro"), "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
-                break;
-            case 4: // show a start test message
+            case 3: // show a start test message
                 curTestIndex = 0;
                 string msg1 = string.Format(Data.getMessage(userLang, "Test1"), Data.getMessage(userLang, "color_" + testsConfig[curTestIndex, 0]), Data.getMessage(userLang, "obj_" + testsConfig[curTestIndex, 0]));
                 //Debug.Log("Test1=" + msg1);
-                rootObj = utility.ShowMessage(msg1, "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
+                rootObj = new GameObject("root");
+                GameObject rootMsg = utility.ShowMessage(msg1, "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
+                rootMsg.transform.SetParent(rootObj.transform);
+                utility3D.createTarget(rootObj, testsConfig[0, 1]);
                 break;
-            case 5: // start test
+            case 4: // start test
                 curTestIndex = 0;
                 rootObj = utility3D.CreateObjsArray(false);
                 isHintDisplay = true;
                 isDisplayTimer = false;
                 break;
-            case 6: // show a start test message
+            case 5: // show a start test message
                 curTestIndex = 1;
+                rootObj = new GameObject("root");
                 string msg2 = string.Format(Data.getMessage(userLang, "Test2"), Data.getMessage(userLang, "color_" + testsConfig[curTestIndex, 1]), Data.getMessage(userLang, "obj_" + testsConfig[curTestIndex, 0]), testsConfig[curTestIndex, 5]);
-                rootObj = utility.ShowMessage(msg2, "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 0));
+                GameObject rootMsg2 = utility.ShowMessage(msg2, "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
+                rootMsg2.transform.SetParent(rootObj.transform);
+                utility3D.createTarget(rootObj, testsConfig[0, 1]);
                 break;
-            case 7: //start test with a time limit
+            case 6: //start test with a time limit
                 curTestIndex = 1;
                 rootObj = utility3D.CreateObjsArray(true);
                 isHintDisplay = true;
                 isDisplayTimer = true;
                 break;
-            case 8: // show a color test start message
+            case 7: // show a color test start message
                 rootObj = utility.ShowMessage("color", "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
                 break;
-            case 9: // start color test 
+            case 8: // start color test 
                 rootObj = colorTest.showColors("selAllCol");
                 //rootObj = utility3D.CreateObjsArray(true);
                 //isHintDisplay = true;
                 //isDisplayTimer = true;
                 break;
-            case 10: // show a start text test message
+            case 9: // show a start text test message
                 rootObj = utility.ShowMessage("text", "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40)); 
                 break;
-            case 11: // start a text test
+            case 10: // start a text test
 
                 break;
             case 12: // show results
@@ -584,8 +572,14 @@ public class Main : MonoBehaviour
             while (progress < 1)
             {
                 progress += increment;
+                if (obj) { 
                 obj.GetComponent<Image>().color = Color.Lerp(colorStart, colorEnd, progress);
-                yield return new WaitForSeconds(smoothness);
+                    yield return new WaitForSeconds(smoothness);
+                }
+                else
+                {
+                    break;
+                }
             };
             Destroy(obj);
         }

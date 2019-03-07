@@ -21,13 +21,13 @@ public class Data {
 
     private static readonly Dictionary<string, string> MessagesRus = new Dictionary<string, string>() {
         { "Intro", "<size=80><b>Тест:  определение темперамента</b></size>" }
-        ,{ "selOneCol", "<b>Выберите самый любимый цвет</b>" }
+        ,{ "selOneCol", "<b>Выберите самый приятный цвет</b>" }
         ,{ "selAllCol", "<b>Выберите один за одним цвета, которые нравятся больше всего</b>" }
         ,{ "Gyro","Извините\nВаше устройство не имеет гироскопа. " } // Sorry\nYour device has to have a Gyroscope
         ,{ "Email", "<b>Введите ваш email.</b>\n<size=40>На этот адрес Вам будет отправлена ссылка на окончание теста.</size>" }
         ,{ "Test1", "Найдите все <b>{0} {1}</b> вокруг вас.\n\n<size=40>После выполнения нажмите кнопку <Exit>,\nкоторая расположена внизу.</size>" }
         ,{ "Test_hint", "Найти <b>{0} {1}</b>. Выбрано <b>{2}/{3}</b>" }
-        ,{ "Test2", "Найдите все <b>{0} {1}</b> вокруг вас\nв течение <b>{2}</b> секунд." }
+        ,{ "Test2", "Найдите все <b>{0} {1}</b> вокруг вас\n\n\nв течение <b>{2}</b> секунд." }
         ,{ "Test_timer", "\n <b> Осталось {0} сек</b>" }
         ,{ "Result", "<size=80><b>Ваши результаты:</b></size>\n\n" +
             "<b>Тест 1</b>: вы нашли <b>{0}</b> объектов из {1}\n" +
@@ -64,6 +64,13 @@ public class Data {
         return result;
     }
 
+    public static bool isLanguge(string key)
+    {
+        bool result = false;
+        if (Messages.ContainsKey(key)) { result = true; }
+        return result;
+    }
+
     public static string getKey(string lang, string key)
     {string result = "";
         if (Messages[lang].ContainsKey(key)){ result =  KeyList[key];}
@@ -79,10 +86,16 @@ public class Data {
         { "English", MessagesEng},
     };
 
-    public static bool isLanguge(string key){
-        bool result = false;
-        if (Messages.ContainsKey(key)){result = true;}
-        return result;
-    }
+    private static readonly Dictionary<string, string> QuestionsEng = new Dictionary<string, string>() {
+        { "1", "" }
+    };
 
+    private static readonly Dictionary<string, string> QuestionsRus = new Dictionary<string, string>() {
+        { "1", "" }
+    };
+
+    private static readonly Dictionary<string, Dictionary<string, string>> Questions = new Dictionary<string, Dictionary<string, string>>() {
+        { "Russian", QuestionsRus},
+        { "English", QuestionsEng},
+    };
 }

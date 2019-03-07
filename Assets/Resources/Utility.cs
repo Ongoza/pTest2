@@ -32,7 +32,7 @@ public class Utility {
         }
         }
 
-    public GameObject ShowMessage(string msg, string action, string actionLabel, Vector2 size, UnityEngine.TextAnchor anchor, Vector2 startLoc)
+    public GameObject ShowMessage(string msg, string action, string actionLabel, Vector2 size, TextAnchor anchor, Vector2 startLoc)
     {
         //logDebug("ShowMessage");
         GameObject rootObj = CreateCanwas("rootMenu", new Vector3(0, main.baseLoc, 12), size);
@@ -49,7 +49,9 @@ public class Utility {
         panelTransform.sizeDelta = size;
         //panelTransform.rotation = Quaternion.AngleAxis(-180, Vector3.up);        
         CreateText(panelTransform, startLoc, size, msg, 50, 0, anchor);
-        CreateButton(panelTransform, "Button", actionLabel, action, "0_10_10", new Vector3(0, 60 - size.y / 2, 0), new Vector2(300, 60));
+        if (!action.Equals("")) { 
+            CreateButton(panelTransform, "Button", actionLabel, action, "0_10_10", new Vector3(0, 60 - size.y / 2, 0), new Vector2(300, 60));
+        }
         // showTutorialsMenu(rootMenu);
         return rootObj;
     }

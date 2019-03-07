@@ -188,13 +188,13 @@ public class Utility3D
     }
 
     // Set up 3d paramaters for 3d objects for a test
-    void SetUpObjParams(GameObject rootObj, GameObject obj, string name, Vector3 loc, Color col, float rot)
+    private void SetUpObjParams(GameObject rootObj, GameObject obj, string name, Vector3 loc, Color col, float rot)
     {
         //utility.logDebug("SetUpObjParams");
         if (obj)
         {
             obj.name = name;
-            obj.transform.SetParent(rootObj.transform);
+            obj.transform.SetParent(rootObj.transform, false);
             obj.transform.position = loc;
             obj.transform.eulerAngles = new Vector3(rot, rot, rot);
             Renderer rend = obj.GetComponent<Renderer>();
@@ -210,6 +210,19 @@ public class Utility3D
             be.triggers.Add(entryExitGaze);
         }
     }
+
+        public void createTarget(GameObject root, int colIndex)
+        {
+            GameObject obj = CreatPyramid3();
+            obj.name = "Model";
+            Renderer rend = obj.GetComponent<Renderer>();
+            rend.material = primitivesMaterial;
+            rend.material.color = getColor(colIndex);
+            obj.transform.localScale = new Vector3(0.8f, 0.8f, 0.8f);
+            obj.transform.position = new Vector3(0, 2.7f, 11);
+            obj.transform.Rotate(0, 77, 0);
+            obj.transform.SetParent(root.transform, false);
+        }
 
     // create 3d objects for a test 
     void SetUpObj(GameObject rootObj, int typeObj, string name, Vector3 loc, Color col, float rot)
@@ -243,7 +256,7 @@ public class Utility3D
         return outCart;
     }
 
-    GameObject CreatPyramid3()
+    public GameObject CreatPyramid3()
     {
         Mesh mesh = new Mesh();
         Vector3 p0 = new Vector3(0, 0, 0);
@@ -286,4 +299,18 @@ public class Utility3D
         Renderer rend = obj.GetComponent<Renderer>();
         mF.sharedMesh = mesh;
     }
+
+    public GameObject CreateObjsMenu(int colIndex)
+    {
+        GameObject rootObj = new GameObject("rootObj");
+        Color col = arrColor[colIndex];
+        SetUpObjParams(rootObj, GameObject.CreatePrimitive(PrimitiveType.Cube), "0", new Vector3(-5,0,16), col, 35);
+        SetUpObjParams(rootObj, GameObject.CreatePrimitive(PrimitiveType.Sphere), "1", new Vector3(-2.5f, 0, 16), col, 35);
+        SetUpObjParams(rootObj, GameObject.CreatePrimitive(PrimitiveType.Capsule), "2", new Vector3(0, 0, 16), col, 35);
+        SetUpObjParams(rootObj, GameObject.CreatePrimitive(PrimitiveType.Cylinder), "3", new Vector3(2.5f, 0, 16), col, 35);
+        SetUpObjParams(rootObj, CreatPyramid3(), "4", new Vector3(5f, 0, 16), col, 35);
+        return rootObj; 
+    }
+
+    public Color getColor(int i){return arrColor[i];}
 }

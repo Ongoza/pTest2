@@ -20,12 +20,12 @@ public class ColorTest
     private MeshFilter quad1;
     private float defaultTime = 3f;
     private Main main;
-    private Utility utility;
+    //private Utility utility;
 
     public ColorTest(Main mainScript, Utility mainUtility)
     {
         main = mainScript;
-        utility = mainUtility;
+       // utility = mainUtility;
     }
 
     private void showResult()
@@ -135,40 +135,14 @@ public class ColorTest
         be.triggers.Add(entryExitGaze);
     }
 
-    //IEnumerator FadeCanvas(float duration, float transparent, GameObject fadeCanvas, GameObject fadeObj, Color colorStart, string scene)
-    //{
-    //    float smoothness = 0.005f; float progress = 0; float increment = smoothness / duration; //The amount of change to apply.
-    //    float newTransparent = 0; if (transparent == 0) { newTransparent = 1; }
-    //    Color colorEnd = new Color(colorStart.r, colorStart.g, colorStart.b, newTransparent);
-    //    while (progress < 1)
-    //    {
-    //        progress += increment;
-    //        fadeObj.GetComponent<Image>().color = Color.Lerp(colorStart, colorEnd, progress);
-    //        yield return new WaitForSeconds(smoothness);
-    //    };
-    //    yield return null;
-    //    if (transparent == 1)
-    //    {
-    //        main.objDestroy(fadeObj);
-    //        main.objDestroy(fadeCanvas);
-    //    }
-    //    else
-    //    {
-    //        Debug.Log("Start scene" + scene);
-    //        UnityEngine.SceneManagement.SceneManager.LoadScene(scene);
-    //    }
-    //}
-
     public GameObject showColors(string btType)
     {
-        //selObj = new selColors ();
-        string msg  =  Data.getMessage(main.userLang, btType);
-
+        //selObj = new selColors ();       
         selectedColor = -1;
         //quad1.transform.rotation = Quaternion.Euler(0, 180, 45);
         root = new GameObject();
         root.name = "rootColors";
-        //root.transform.position = new Vector3(0, 11.5f, 20);
+        root.transform.position = new Vector3(0, 0, 16);
         //root.transform.rotation.Set(0, 0, 1,0.2f);
         //root.transform.Rotate(Vector3.up,90);
         createArrays();
@@ -206,16 +180,16 @@ public class ColorTest
     private void createBaseObjs(string btType)
     {
         //Debug.Log("start create cards 2");
-        GameObject newCanvas = new GameObject("Canvas");
-        newCanvas.transform.SetParent(root.transform);
+        GameObject newCanvas = new GameObject("Canvas");       
         Canvas c = newCanvas.AddComponent<Canvas>();
-        //c.renderMode = RenderMode.WorldSpace;
+        c.renderMode = RenderMode.WorldSpace;
         newCanvas.AddComponent<CanvasScaler>();
         newCanvas.AddComponent<GvrPointerGraphicRaycaster>();
         RectTransform NewCanvasRect = newCanvas.GetComponent<RectTransform>();
-        NewCanvasRect.sizeDelta = new Vector2(120, 70);
-        NewCanvasRect.transform.position = new Vector3(2,-2,16);
+        NewCanvasRect.transform.position = new Vector3(0, 0, 0);
+        NewCanvasRect.sizeDelta = new Vector2(120, 70);       
         NewCanvasRect.transform.localScale = new Vector3(0.025f, 0.025f, 1);
+        newCanvas.transform.SetParent(root.transform,false);
         for (int i = 0; i < 8; i++)
         {
             listCards[i] = createCard2(i, NewCanvasRect, new Color(arrColor[i][0] / 255f, arrColor[i][1] / 255f, arrColor[i][2] / 255f, 1f), btType);
@@ -290,11 +264,11 @@ public class ColorTest
     //    }
     //}
 
-    private IEnumerator waitResult()
-    {
-        yield return new WaitForSeconds(2);
-        showResult();
-    }
+    //private IEnumerator waitResult()
+    //{
+    //    yield return new WaitForSeconds(2);
+    //    showResult();
+    //}
 
    
     //public void onClickTimed(int i)
