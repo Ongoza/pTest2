@@ -46,7 +46,12 @@ public class Data {
         ,{ "obj_2", "капсулы" }
         ,{ "obj_3", "цилиндры" }
         ,{ "obj_4", "пирамиды" }
-
+        ,{ "start", "Начать" }
+        ,{ "next", "Следующий" }
+        ,{ "yes", "Да" }
+        ,{ "not", "Нет" }
+        ,{"IntroColTest","Выберите цвета которые вам нравятся один за одним."}
+        ,{"IntroTextTest","Ответьте \"Да\" или \"Нет\" на 30 вопросов."}
     };
 
     private static readonly Dictionary<string, string> KeyList = new Dictionary<string, string>() {
@@ -59,8 +64,8 @@ public class Data {
     };
 
     public static string getMessage(string lang, string key)
-    {string result = "";
-        if (Messages[lang].ContainsKey(key)) { result = Messages[lang][key];}
+    { string result = "";
+        if (Messages[lang].ContainsKey(key)) { result = Messages[lang][key]; }
         return result;
     }
 
@@ -72,12 +77,12 @@ public class Data {
     }
 
     public static string getKey(string lang, string key)
-    {string result = "";
-        if (Messages[lang].ContainsKey(key)){ result =  KeyList[key];}
+    { string result = "";
+        if (Messages[lang].ContainsKey(key)) { result = KeyList[key]; }
         return result;
     }
 
-    public static Dictionary<string,string> getKeys(){return KeyList;}
+    public static Dictionary<string, string> getKeys() { return KeyList; }
 
     public static Dictionary<string, string> getConnectionData() { return connectionData; }
 
@@ -86,16 +91,55 @@ public class Data {
         { "English", MessagesEng},
     };
 
-    private static readonly Dictionary<string, string> QuestionsEng = new Dictionary<string, string>() {
-        { "1", "" }
+    private static readonly Dictionary<string, List<int>> Answers = new Dictionary<string, List<int>>(){
+        ["+"] = new List<int>{1, 3, 8, 10, 13, 17, 22, 25, 27, 39, 44, 46, 49, 53, 56},
+        ["-"] = new List<int>{ 5, 15, 20, 29, 32, 34, 37, 41, 51},
+        ["n"] = new List<int>{ 2, 4, 7, 9, 11, 14, 16, 19, 21, 23, 26, 28, 31, 33, 35, 38, 40, 43, 45, 47, 50, 52, 55, 57}
     };
 
-    private static readonly Dictionary<string, string> QuestionsRus = new Dictionary<string, string>() {
-        { "1", "" }
+    private static readonly string[][] QuestionsRus = new string[][]
+    {
+      new string[]{"1","Часто ли Вы чувствуете тягу к новым впечатлениям?"},
+      new string[]{"2","Часто ли Вы чувствуете, что нуждаетесь в друзьях, которые могут Вас понять?"},
+      new string[]{"3","Считаете ли Вы себя беззаботным человеком?"},
+      new string[]{"4","Очень ли трудно Вы отказываетесь от своих намерений?"},
+      new string[]{"7","Часты ли у Вас спады и подъемы настроения?"},
+      new string[]{"9","Чуствовали ли вы себя несчастным, без серьезной причины для этого?"},
+      new string[]{"10","Верно ли, что на спор Вы способны решиться на все?"},
+      new string[]{"15","Предпочитаете ли вы работать в одиночестве?"},
+      new string[]{"16","Вас легко задеть?"},
+      new string[] {"17","Любите ли Вы часто бывать в компании?"},
+      new string[]{"19","Вы иногда полны энергии, а иногда чувствуете сильную вялость?"},
+      new string[]{"21","Много ли Вы мечтаете?"},
+      new string[]{"22","Можете ли вы быстро выразить ваши мысли словами?"},
+      new string[]{"23","Часто ли Вас терзает чувство вины?"},
+      new string[]{"26","У Вас часто нервы бывают напряжены до предела?"},
+      new string[]{"27","Считают ли Вас человеком живым и веселым?"},
+   //   new string[]{"32","Предпочли бы вы остаться в одиночестве дома, чем пойти на скучную вечеринку?"},
+  //    new string[]{"33","Бываете ли вы иногда беспокойными настолько, что не можете долго усидеть на месте?"},
+      new string[]{"34","Нравится ли Вам работа, которая требует пристального внимания?"},
+      new string[]{"38","Вы легко раздражетесь?"},
+      new string[]{"39","Нравится ли Вам работа, которая требует быстроты действий?"},
+      new string[]{"41","Предпочитаете ли вы больше строить планы, чем действовать?"},
+      new string[]{"43","Нервничаете ли вы в местах, подобных лифту, метро, туннелю?"},
+      new string[]{"44","При знакомстве вы обычно первыми проявляете инициативу?"},
+      new string[]{"46","Огорчились бы Вы, если бы долго не могли видеться со своими друзьями?"},
+      new string[]{"50","Вы уверенный в себе человек?"},
+      new string[]{"51","Замкнуты ли вы обычно со всеми, кроме близких друзей?"},
+      new string[]{"52","Часто ли с вами случаются неприятности?"},
+      new string[]{"53","Сумели бы Вы внести оживление в скучную компанию?"},
+      new string[]{"55","Беспокоитесь ли Вы о своем здоровье?"}
     };
 
-    private static readonly Dictionary<string, Dictionary<string, string>> Questions = new Dictionary<string, Dictionary<string, string>>() {
-        { "Russian", QuestionsRus},
-        { "English", QuestionsEng},
+    private static readonly string[][] QuestionsEng = new string[][] {
+        new string[]{ "1", "" }
     };
+
+    private static readonly Dictionary<string, string[][]> Questions = new Dictionary<string, string[][]>() {
+         ["Russian"]= QuestionsRus,
+         ["English"]= QuestionsEng,
+    };
+
+    public static string[] getQuestionIndex(string lang, int index){return Questions[lang][index];}
+    public static int getQuestionsCount(string lang) { return Questions[lang].Length; }
 }

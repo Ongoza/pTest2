@@ -58,6 +58,6 @@
     public int rz;
 }
 
-[System.Serializable] public class selColors { public selColor[] colors; }
+//[System.Serializable] public class selColors { public selColor[] colors; }
 
-[System.Serializable] public class selColor { public int name; public int time; }
+//[System.Serializable] public class selColor { public int name; public int time; }

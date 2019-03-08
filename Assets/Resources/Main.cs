@@ -6,24 +6,25 @@ using UnityEngine.EventSystems;
 
 using System.IO; //save to file
 
-//выводить опросник Айзенка - сокращенный до 30-40 вопросов
-//(по 15-20 на каждую шкалу)
+// сделать убегающий объект в 2 паузы между вопросами
 //Выводить результаты
-//  - уровень темперамента в трех шкалах(флегметик 40% сангвиник 60% устойчивость - 20%)
+//  - уровень темперамента в трех шкалах(флегметик 40% сангвиник 60% устойчивость(сила, стабильность) 30 %)
+// устойчивость как отношения большей шкалы к произведению косинуса на максимальное значение большей шкалы
 // - уровень стресса и эффективность, темперамент
-//переключение языков 
+//переключение языков на первом экране
 //Сделать ограничение по времени записи движений для каждой сцены (15 сек на сцену)
 //Сделать ограничение по времени на нахождение без движения и выход(1 минуту на одной сцене через меню подтверждения выхода (15 сек))
 //Сделать стрелку указатель на текстовое сообщение
 //Сделать заставку с анимацитей ввода текста(Психологические тесты) и появление 3д модели VR
 //Поправить проверку на гиро и девайс инфо  
-//Окно информации о разработчике и цели проекта
-//Заставка
+//Окно информации о разработчике и цели проекта на последнем экране
+// переводы текста на английский, испанский, польский
+// андроид и аппл
 
 public class Main : MonoBehaviour
 {
     // global temp variables
-    private int curScene = 0; //  start scene index 
+    private int curScene = 11; //  start scene index 
     private bool isDebug = false; // VR debug enable
     private bool isNet = false; // network enable
 
@@ -85,8 +86,13 @@ public class Main : MonoBehaviour
     //save user actions during one scene
     private SnenaMotionData curSnenaMotionData;
     private float userSceneDataTime =0.0f; // timer data
+    private float userTaskDataTime = 0.0f; // timer data
     // result settings
     private float[] timerShowResult = new float[]{0f, 10f, 10f}; // timer how long wait for the result [trigger,default,current]
+    private List<int[]> selColorNames = new List<int[]>();
+    private List<int[]> selTextNames = new List<int[]>();
+    private int curQuestionKey;
+    private int questionsCount;
 
     void Start(){                    
         checkGyro = 0;
@@ -192,8 +198,8 @@ public class Main : MonoBehaviour
         //    // Android close icon or back button tapped.
         //    Application.Quit();
         //}
-        if (isActionSave) {
-            userSceneDataTime += Time.deltaTime;
+        userSceneDataTime += Time.deltaTime;
+        if (isActionSave) {            
             int[] curAction = new int[14]{
                    Mathf.RoundToInt(Camera.main.transform.eulerAngles.x*precisionDec),
                    Mathf.RoundToInt(Camera.main.transform.eulerAngles.y*precisionDec),
@@ -351,8 +357,21 @@ public class Main : MonoBehaviour
                 StartCoroutine(FadeTo("b_" + curfocusObj));
                 int colorI = 0;
                 int.TryParse(curfocusObj, out colorI);
-
-                //NextScene(1);
+                selColorNames.Add(new int[] { colorI, Mathf.RoundToInt(userSceneDataTime * 1000) });
+                if (selColorNames.Count > 6){NextScene(1);}
+                break;
+            case "NextQuestion":
+                int surKey = 0;
+                int.TryParse(curfocusObj, out surKey);
+                selTextNames.Add(new int[] {curQuestionKey, surKey, Mathf.RoundToInt(userSceneDataTime * 1000) });
+                Destroy(rootObj);
+                if(questionsCount > selTextNames.Count) { 
+                    string[] curQuestion = Data.getQuestionIndex(userLang, selTextNames.Count);
+                    int.TryParse(curQuestion[0], out curQuestionKey);
+                    string notes = (selTextNames.Count + 1).ToString() + "/" + questionsCount.ToString();
+                    rootObj = utility.ShowDialog(curQuestion[1], notes, "NextQuestion", Data.getMessage(userLang, "yes"), Data.getMessage(userLang, "not"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
+                }
+                else { NextScene(1);}
                 break;
             default: Debug.Log("clickSelectEvent not found action for " + name); break;
         }
@@ -480,21 +499,27 @@ public class Main : MonoBehaviour
                 isDisplayTimer = true;
                 break;
             case 7: // show a color test start message
-                rootObj = utility.ShowMessage("color", "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
+                rootObj = utility.ShowMessage(Data.getMessage(userLang, "IntroColTest"), "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
                 break;
             case 8: // start color test 
+                selColorNames.Clear();
                 rootObj = colorTest.showColors("selAllCol");
-                //rootObj = utility3D.CreateObjsArray(true);
-                //isHintDisplay = true;
-                //isDisplayTimer = true;
+                GameObject msgObj2 = utility.ShowMessage(Data.getMessage(userLang, "IntroColTest"), "", "Start", new Vector2(1200, 200), TextAnchor.MiddleCenter, new Vector2(0, 20));
+                msgObj2.transform.SetParent(rootObj.transform);
+                msgObj2.transform.position = new Vector3(0, 5.4f, 16);
                 break;
             case 9: // show a start text test message
-                rootObj = utility.ShowMessage("text", "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40)); 
+                rootObj = utility.ShowMessage(Data.getMessage(userLang, "IntroTextTest"), "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40)); 
                 break;
             case 10: // start a text test
-
+                selTextNames.Clear();
+                questionsCount = Data.getQuestionsCount(userLang);
+                string[] curQuestion = Data.getQuestionIndex(userLang, selTextNames.Count);
+                int.TryParse(curQuestion[0],out curQuestionKey);
+                string notes = (selTextNames.Count + 1).ToString() +"/"+ questionsCount.ToString();
+                rootObj = utility.ShowDialog(curQuestion[1], notes, "NextQuestion", Data.getMessage(userLang, "yes"), Data.getMessage(userLang, "not"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
                 break;
-            case 12: // show results
+            case 11: // show results
                 timerShowResult[2] = timerShowResult[1];
                 timerShowResult[0] = 1 ;                
                 string msg3 = string.Format(Data.getMessage(userLang, "Result"), testsConfig[0, 3], testsConfig[0, 2], testsConfig[1, 3], testsConfig[1, 2], Mathf.Floor(testsConfig[curTestIndex, 5] - testTime).ToString());

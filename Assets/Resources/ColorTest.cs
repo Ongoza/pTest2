@@ -12,7 +12,7 @@ public class ColorTest
     private float[][] arrLoc = new float[8][];
     private float[][] arrColor = new float[8][];
     private GameObject[] listCards = new GameObject[8];
-    private List<int> selNames = new List<int>();
+    //private List<int> selNames = new List<int>();
     private string selNameData;
     private int selNamesCounter;
     private GameObject root;
@@ -28,7 +28,7 @@ public class ColorTest
        // utility = mainUtility;
     }
 
-    private void showResult()
+    private void showResult(List<int> selNames)
     {
         float s = 0; float e = 0; float[] kArray = new float[] { 8.1f, 6.8f, 6, 5.3f, 4.7f, 4, 3.2f, 1.8f };
         //string listStr = ""; for (int i = 0; i < selNames.Count; i++) {listStr += selNames[i].ToString ();}

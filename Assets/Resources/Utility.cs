@@ -195,4 +195,29 @@ public class Utility {
         main.TextEmail = InputText.GetComponent<Text>();
         return rootObj;
     }
+
+    public GameObject ShowDialog(string msg, string notes, string action, string actionLabel0, string actionLabel1, Vector2 size, TextAnchor anchor, Vector2 startLoc)
+    {
+        //logDebug("ShowMessage");
+        GameObject rootObj = CreateCanwas("rootMenu", new Vector3(0, main.baseLoc, 12), size);
+        GameObject panel = new GameObject("Panel");
+        panel.AddComponent<CanvasRenderer>();
+        Image i = panel.AddComponent<Image>();
+        i.color = new Vector4(1, 1, 1, 0.7f);
+        i.sprite = uisprite;
+        i.type = Image.Type.Sliced;
+        RectTransform panelTransform = panel.GetComponent<RectTransform>();
+        panel.transform.SetParent(rootObj.transform, true);
+        panelTransform.localScale = new Vector3(1f, 1f, 1f);
+        panelTransform.localPosition = new Vector3(0, 40, 0);
+        panelTransform.sizeDelta = size;
+        //panelTransform.rotation = Quaternion.AngleAxis(-180, Vector3.up);        
+        CreateText(panelTransform, startLoc, size, msg, 50, 0, anchor);
+        if(!notes.Equals("")){CreateText(panelTransform, new Vector2(size.x*0.4f, size.y*0.4f), new Vector2(size.x/4,100), notes, 40, 0, anchor);}
+        CreateButton(panelTransform, "Button0", actionLabel0, action, "0", new Vector3(-size.x / 5, 60 - size.y / 2, 0), new Vector2(300, 60));
+        CreateButton(panelTransform, "Button1", actionLabel1, action, "1", new Vector3(size.x / 5, 60 - size.y / 2, 0), new Vector2(300, 60));
+
+        // showTutorialsMenu(rootMenu);
+        return rootObj;
+    }
 }
