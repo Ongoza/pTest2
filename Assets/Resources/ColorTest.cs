@@ -28,22 +28,8 @@ public class ColorTest
        // utility = mainUtility;
     }
 
-    private void showResult(List<int> selNames)
+    private void showResult(float resS, float resE)
     {
-        float s = 0; float e = 0; float[] kArray = new float[] { 8.1f, 6.8f, 6, 5.3f, 4.7f, 4, 3.2f, 1.8f };
-        //string listStr = ""; for (int i = 0; i < selNames.Count; i++) {listStr += selNames[i].ToString ();}
-        //		Debug.Log ("selNames1="+listStr);
-        for (int i = 0; i < selNames.Count; i++)
-        {
-            if (i < 3) { if (selNames[i] == 0 || selNames[i] == 6 || selNames[i] == 7) { s += kArray[i]; } }
-            if (i > 4) { if (selNames[i] == 1 || selNames[i] == 2 || selNames[i] == 3 || selNames[i] == 4) { s += kArray[7 - i]; } }
-            if (selNames[i] == 2 || selNames[i] == 3 || selNames[i] == 4) { e += kArray[i]; }
-            //Debug.Log("Calculate: i=" +i+" color="+selNames[i]+" s=" +s+" e="+e); //
-            //String data = Arrays.toString(selNames);
-        }
-        float resS = s / 42;
-        float resE = (e - 9) / 12;
-        Debug.Log("result==" + resS + " " + resE);
         GameObject newCanvas = new GameObject("ResultCanvas");
         Canvas c = newCanvas.AddComponent<Canvas>();
         c.renderMode = RenderMode.WorldSpace;
@@ -221,92 +207,4 @@ public class ColorTest
         return button;
     }
 
-    //void handleClick(int i)
-    //{
-    //    isTimer = false;
-    //    workTime = defaultTime;
-    //    timedPointer.SetFloat("_Angle", 360);
-    //    selectedColor = -1;
-    //    if (i == 9)
-    //    {
-    //        StartCoroutine(fadeScene(1.0f, false, new Color(0.2f, 0.2f, 0.2f, 0f), "Main"));
-    //    }
-    //    else
-    //    {
-    //        if (!selNames.Contains(i))
-    //        {
-    //            selNames.Add(i);
-    //            Destroy(listCards[i].GetComponent<EventTrigger>());
-    //            StartCoroutine(FadeTo(i));
-    //            if (selNames.Count > 6)
-    //            {
-    //                if (selNames.Count == 7)
-    //                {
-    //                    int j = 0;
-    //                    while (j < 8)
-    //                    {
-    //                        if (!selNames.Contains(j))
-    //                        {
-    //                            selNames.Add(j);
-    //                            Debug.Log("Already clicked=" + j);
-    //                            Destroy(listCards[j].GetComponent<EventTrigger>());
-    //                            StartCoroutine(FadeTo(j));
-    //                        }
-    //                        j++;
-    //                    }
-    //                }
-    //                Destroy(GameObject.Find("StartCanvas"));
-    //                globalData.addcTest(selNames);
-    //                StartCoroutine(waitResult());
-    //            }
-    //        }
-    //        else { Debug.Log("Already clicked=" + i); }
-    //    }
-    //}
-
-    //private IEnumerator waitResult()
-    //{
-    //    yield return new WaitForSeconds(2);
-    //    showResult();
-    //}
-
-   
-    //public void onClickTimed(int i)
-    //{
-    //    Debug.Log("Start Click timed=" + i);
-    //    isTimer = false; workTime = defaultTime;
-    //    timedPointer.SetFloat("_Angle", 360);
-    //    if (selectedColor > -1)
-    //    {
-    //        handleClick(selectedColor);
-    //        selectedColor = -1;
-    //    }
-    //    else { Debug.Log("Start Click timed selected = -1"); }
-
-    //}
-
-    //private GameObject CreateText(Transform parent, float x, float y, float w, float h, string message, int fontSize, int fontStyle, TextAnchor achor)
-    //{
-    //    GameObject textObject = new GameObject("Text");
-    //    textObject.transform.SetParent(parent, false);
-    //    RectTransform trans = textObject.AddComponent<RectTransform>();
-    //    trans.sizeDelta = new Vector2(w, h);
-    //    trans.anchoredPosition3D = new Vector3(0, 0, 0);
-    //    trans.anchoredPosition = new Vector2(x, y);
-    //    trans.transform.rotation = Quaternion.AngleAxis(-180, Vector3.up);
-    //    trans.localScale = new Vector3(1.0f, 1.0f, 1.0f);
-    //    trans.localPosition.Set(0, 0, 0);
-    //    textObject.AddComponent<CanvasRenderer>();
-    //    Text text = textObject.AddComponent<Text>();
-    //    text.supportRichText = true;
-    //    text.text = message;
-    //    text.fontSize = fontSize;
-    //    if (fontStyle == 1) { text.fontStyle = FontStyle.Bold; }
-    //    text.font = Resources.GetBuiltinResource(typeof(Font), "Arial.ttf") as Font;
-    //    text.alignment = achor;
-    //    //text.alignment = TextAnchor.MiddleCenter;
-    //    //text.horizontalOverflow = HorizontalWrapMode.Overflow;
-    //    text.color = new Color(0, 0, 0);
-    //    return textObject;
-    //}
 }

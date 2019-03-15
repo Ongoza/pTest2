@@ -24,7 +24,9 @@
     public string deviceInfo;
     public List<TestObjects> rightObjectsList;
     public List<TestObjects> selectedObjectsList;
-    public List<SnenaMotionData> snenasMotionData;    
+    public List<SnenaMotionData> snenasMotionData;
+    public TextTestResult textTestResult;
+    public ColorTestResult colorTestResult;
 }
 
 [System.Serializable] public class SnenaMotionData{
@@ -58,6 +60,16 @@
     public int rz;
 }
 
-//[System.Serializable] public class selColors { public selColor[] colors; }
+[System.Serializable] public class TextTestResult{
+    public List<int[]> answers; 
+    public int extra;
+    public int stabil;
+    public int totalTime;
+}
 
-//[System.Serializable] public class selColor { public int name; public int time; }
+[System.Serializable] public class ColorTestResult {
+    public List<int[]> selected;
+    public int energy;
+    public int stress;
+    public int totalTime;
+}

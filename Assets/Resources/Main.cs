@@ -6,28 +6,31 @@ using UnityEngine.EventSystems;
 
 using System.IO; //save to file
 
-// сделать убегающий объект в 2 паузы между вопросами
 //Выводить результаты
-//  - уровень темперамента в трех шкалах(флегметик 40% сангвиник 60% устойчивость(сила, стабильность) 30 %)
-// устойчивость как отношения большей шкалы к произведению косинуса на максимальное значение большей шкалы
-// - уровень стресса и эффективность, темперамент
+//    - уровень темперамента в трех шкалах(флегметик 40% сангвиник 60% устойчивость(сила, стабильность) 30 %)
+//     устойчивость как отношения большей шкалы к произведению косинуса на максимальное значение большей шкалы
+//     - уровень стресса и эффективность, темперамент
+//Окно информации о разработчике и цели проекта на последнем экране
 //переключение языков на первом экране
-//Сделать ограничение по времени записи движений для каждой сцены (15 сек на сцену)
-//Сделать ограничение по времени на нахождение без движения и выход(1 минуту на одной сцене через меню подтверждения выхода (15 сек))
 //Сделать стрелку указатель на текстовое сообщение
 //Сделать заставку с анимацитей ввода текста(Психологические тесты) и появление 3д модели VR
 //Поправить проверку на гиро и девайс инфо  
-//Окно информации о разработчике и цели проекта на последнем экране
 // переводы текста на английский, испанский, польский
+// сделать убегающий объект в 2 паузы между вопросами
 // андроид и аппл
 
 public class Main : MonoBehaviour
 {
     // global temp variables
-    private int curScene = 11; //  start scene index 
+    private int curScene = 10; //  start scene index 
     private bool isDebug = false; // VR debug enable
     private bool isNet = false; // network enable
 
+    private float[] trackingTime = new float[] { 30f, 0f }; // [0] time in sec while moving are recording for each action, [1] - current timer
+    private float[] timerShowResult = new float[] { 0f, 10f, 10f }; // timer in sec how long user read results [trigger,default,current] before send data to server
+    private float[] userSceneDataTime = new float[] { 0.0f,0f} ; // [0] timer for scena, [1] timer for action
+
+    //private int[] sleepTime = new int[2] { 20,0 }; // [0] time in min with no any actions for closeing the app, [1] - current timer
     public int precisionDec = 100; // number dec after point in movement control 1 - 0, 10-0.0, 100 - 0.00
     public float baseLoc = 2;
     private GameObject camFade; // camera Fade object
@@ -85,14 +88,10 @@ public class Main : MonoBehaviour
     //fixing actions time variables
     //save user actions during one scene
     private SnenaMotionData curSnenaMotionData;
-    private float userSceneDataTime =0.0f; // timer data
-    private float userTaskDataTime = 0.0f; // timer data
     // result settings
-    private float[] timerShowResult = new float[]{0f, 10f, 10f}; // timer how long wait for the result [trigger,default,current]
-    private List<int[]> selColorNames = new List<int[]>();
-    private List<int[]> selTextNames = new List<int[]>();
-    private int curQuestionKey;
-    private int questionsCount;
+     // Text test variables
+    private int curQuestionKey; // curent question key 
+    private int questionsCount; // total number of questions
 
     void Start(){                    
         checkGyro = 0;
@@ -120,42 +119,17 @@ public class Main : MonoBehaviour
         utility = new Utility(this, isDebug);
         utility3D = new Utility3D(this, utility);
         colorTest = new ColorTest(this, utility);
-        if (checkGyro > 0)
-        {
-            Init();
-        }
-        else
-        {
-            StartCoroutine(PauseInit(7));
-        }
-
+        if (checkGyro > 0){ Init(); } else { StartCoroutine(PauseInit(7));}
     }
 
     void Init() {
         camFade = GameObject.Find("camProtector");
-        try
-        {
+        try{
             deviceDesc = "#_"+SystemInfo.deviceModel+",#_"+ SystemInfo.deviceType + ",#_" + SystemInfo.deviceName + ",#_" + SystemInfo.operatingSystem;
             Debug.Log(deviceDesc);
-        }
-        catch (System.Exception e)
-        {
-            Debug.Log(e);
-        }
-            
+        }catch (System.Exception e){Debug.Log(e);}
         //utility.logDebug("Init");
-        testData = new TestData()
-        {
-            deviceID = deviceID,
-            lang = userLang,
-            gyro = checkGyro,
-            deviceInfo = deviceDesc,
-            userZone = userZone,
-            startDateTime = System.DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss"),
-            snenasMotionData = new List<SnenaMotionData>(),
-            rightObjectsList = new List<TestObjects>(),
-            selectedObjectsList = new List<TestObjects>()
-        };
+        initTestData();
         //utility.logDebug("Start 1");
         curSnenaMotionData = new SnenaMotionData() { i = 0, act = new List<UserActivity>() };
         lastAction = new float[14];        
@@ -165,19 +139,22 @@ public class Main : MonoBehaviour
         string srv = Data.getConnectionData()["ServerIP"] + ":" + Data.getConnectionData()["ServerPort"];
         //Debug.Log(string.Join(";", Data.getConnectionData()["SeverPort"]));
         connection = new Connection(srv, isNet);
-        // Test connection module
-        //connection.putDataString("/putTest", "{'test': 'data'}");
-        // string txtFromFile = "";
-        // using (StreamReader streamReader = File.OpenText("c:\\11\\unityJson.txt")){txtFromFile = streamReader.ReadToEnd();}
-        // Debug.Log("Start end 1");
-        //Debug.Log(txtFromFile);
-        // TestData testData2 =  JsonUtility.FromJson<TestData>(txtFromFile);
-        // Debug.Log("Start end");
-        // connection.putDataBlob("/putVrData", testData2);
+        //testConnection();
         Debug.Log("Start end");
         NextScene(0);
     }
 
+    private void testConnection(){
+        // Test connection module with data from a file
+        connection.putDataString("/putTest", "{'test': 'data'}");
+        string txtFromFile = "";
+        using (StreamReader streamReader = File.OpenText("c:\\11\\unityJson.txt")){txtFromFile = streamReader.ReadToEnd();}
+        Debug.Log("Start end 1");
+        //Debug.Log(txtFromFile);
+        TestData testData2 =  JsonUtility.FromJson<TestData>(txtFromFile);
+        // Debug.Log("Start end");
+       connection.putDataBlob("/putVrData", testData2);
+    }
 
     public IEnumerator PauseInit(float timer)
     {
@@ -198,9 +175,12 @@ public class Main : MonoBehaviour
         //    // Android close icon or back button tapped.
         //    Application.Quit();
         //}
-        userSceneDataTime += Time.deltaTime;
-        if (isActionSave) {            
-            int[] curAction = new int[14]{
+        userSceneDataTime[0] += Time.deltaTime;
+        userSceneDataTime[1] += Time.deltaTime;
+        if (isActionSave) {
+            if (trackingTime[0] > trackingTime[1]){
+                trackingTime[1] += Time.deltaTime;
+                int[] curAction = new int[14]{
                    Mathf.RoundToInt(Camera.main.transform.eulerAngles.x*precisionDec),
                    Mathf.RoundToInt(Camera.main.transform.eulerAngles.y*precisionDec),
                    Mathf.RoundToInt(Camera.main.transform.eulerAngles.z*precisionDec),
@@ -215,16 +195,20 @@ public class Main : MonoBehaviour
                    curfocusObjCode[8],// obj angle.x
                    curfocusObjCode[9],// obj angle.y
                    curfocusObjCode[10]// obj angle.z
-            };            
-            bool trNewData = false;
-            for (int i = 0; i < curAction.Length; i++){
-                if (curAction[i] != lastAction[i]) { trNewData = true; break; }
-            }
-            if (trNewData) {
-                //Debug.Log("0 curAction = " + string.Join(";", curAction)+ "0 lastAction = " + string.Join(";", lastAction));
-                curSnenaMotionData.act.Add(new UserActivity { t = Mathf.RoundToInt(userSceneDataTime*1000), a = curAction });
-                //Debug.Log("1 curAction = " + JsonUtility.ToJson(curSnenaMotionData.userActivities));
-                for (int i = 0; i < curAction.Length; i++){lastAction[i] = curAction[i];}                
+                };
+                bool trNewData = false;
+                for (int i = 0; i < curAction.Length; i++){
+                    if (curAction[i] != lastAction[i]) { trNewData = true; break; }
+                }
+                if (trNewData){
+                    //Debug.Log("0 curAction = " + string.Join(";", curAction)+ "0 lastAction = " + string.Join(";", lastAction));
+                    curSnenaMotionData.act.Add(new UserActivity { t = Mathf.RoundToInt(userSceneDataTime[0] * 1000), a = curAction });
+                    //Debug.Log("1 curAction = " + JsonUtility.ToJson(curSnenaMotionData.userActivities));
+                    for (int i = 0; i < curAction.Length; i++) { lastAction[i] = curAction[i]; }
+                }
+            } else { // limit time actions recording
+                Debug.Log("reach a records time limit "+ trackingTime);
+                isActionSave = false;
             }
         }
         if (isTimer){ // display selecting pointer
@@ -290,13 +274,14 @@ public class Main : MonoBehaviour
         curfocusObjCode = new int[11] { -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
         workTime = defaultTime;
         if (timedPointer) { timedPointer.SetFloat("_Angle", 360); }
+        trackingTime[1] = 0f;
     }
 
     public void OnClickTimed(){ClickSelectEvent();}
 
     // on the cusror timed click on an active object in a scena
     private void ClickSelectEvent(){
-        isTimer = false;
+        isTimer = false;       
         Debug.Log("clickSelectEvent=" + curfocusType + "="+ curfocusObj);
         switch (curfocusType){
             case "Next":  NextScene(1);  break;
@@ -306,7 +291,7 @@ public class Main : MonoBehaviour
                 //Debug.Log(testData.selectedObjectsList.Count + "="+ JsonUtility.ToJson(testData.selectedObjectsList));
                 testData.selectedObjectsList[testData.selectedObjectsList.Count-1].objs.Add( 
                     new TestObject() {
-                        time = Mathf.RoundToInt(userSceneDataTime*1000),
+                        time = Mathf.RoundToInt(userSceneDataTime[1]*1000),
                         i = curfocusObjCode[0],
                         lx = curfocusObjCode[5],
                         ly = curfocusObjCode[6],
@@ -315,6 +300,7 @@ public class Main : MonoBehaviour
                         type =  curfocusObjCode[1], // cur obj type 
                         color = curfocusObjCode[2], // cur obj color
                     });
+                userSceneDataTime[1] = 0f;
                 testsConfig[curTestIndex, 4]++;
                 // if this is a right object                
                 if (curfocusObjCode[0]!=0){ testsConfig[curTestIndex, 3]++; }
@@ -357,21 +343,47 @@ public class Main : MonoBehaviour
                 StartCoroutine(FadeTo("b_" + curfocusObj));
                 int colorI = 0;
                 int.TryParse(curfocusObj, out colorI);
-                selColorNames.Add(new int[] { colorI, Mathf.RoundToInt(userSceneDataTime * 1000) });
-                if (selColorNames.Count > 6){NextScene(1);}
+                testData.colorTestResult.selected.Add(new int[] { colorI, Mathf.RoundToInt(userSceneDataTime[1] * 1000) });
+                userSceneDataTime[1]=0f;
+                if (testData.colorTestResult.selected.Count > 6){
+                    float s = 0; float e = 0; float[] kArray = new float[] { 8.1f, 6.8f, 6, 5.3f, 4.7f, 4, 3.2f, 1.8f };
+                    for (int i = 0; i < testData.colorTestResult.selected.Count; i++)
+                    {
+                        if (i < 3) { if (testData.colorTestResult.selected[i][0] == 0 || testData.colorTestResult.selected[i][0] == 6 || testData.colorTestResult.selected[i][0] == 7) { s += kArray[i]; } }
+                        if (i > 4) { if (testData.colorTestResult.selected[i][0] == 1 || testData.colorTestResult.selected[i][0] == 2 || testData.colorTestResult.selected[i][0] == 3 || testData.colorTestResult.selected[i][0] == 4) { s += kArray[7 - i]; } }
+                        if (testData.colorTestResult.selected[i][0] == 2 || testData.colorTestResult.selected[i][0] == 3 || testData.colorTestResult.selected[i][0] == 4) { e += kArray[i]; }
+                        //Debug.Log("Calculate: i=" +i+" color="+testData.colorTestResult.selected[i][0]+" s=" +s+" e="+e); //
+                        //String data = Arrays.toString(testData.colorTestResult.selected);
+                    }
+                    testData.colorTestResult.stress = Mathf.RoundToInt(s / 42);
+                    testData.colorTestResult.energy = Mathf.RoundToInt((e - 9) / 12);
+                    testData.colorTestResult.totalTime = Mathf.RoundToInt(userSceneDataTime[0] * 1000);
+                    Debug.Log("Color test result= " + JsonUtility.ToJson(testData.colorTestResult));
+                    NextScene(1);
+                }
                 break;
             case "NextQuestion":
                 int surKey = 0;
                 int.TryParse(curfocusObj, out surKey);
-                selTextNames.Add(new int[] {curQuestionKey, surKey, Mathf.RoundToInt(userSceneDataTime * 1000) });
-                Destroy(rootObj);
-                if(questionsCount > selTextNames.Count) { 
-                    string[] curQuestion = Data.getQuestionIndex(userLang, selTextNames.Count);
-                    int.TryParse(curQuestion[0], out curQuestionKey);
-                    string notes = (selTextNames.Count + 1).ToString() + "/" + questionsCount.ToString();
-                    rootObj = utility.ShowDialog(curQuestion[1], notes, "NextQuestion", Data.getMessage(userLang, "yes"), Data.getMessage(userLang, "not"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
+                testData.textTestResult.answers.Add(new int[] {curQuestionKey, surKey, Mathf.RoundToInt(userSceneDataTime[1] * 1000) });
+                userSceneDataTime[1] = 0f;
+                Debug.Log("item = " + curQuestionKey + " " + surKey);
+                if (surKey == 0){                    
+                    if (Data.Answers["+"].Contains(curQuestionKey)) { testData.textTestResult.extra++; }
+                    if (Data.Answers["n"].Contains(curQuestionKey)) { testData.textTestResult.stabil++; }
+                }else{
+                    if (Data.Answers["-"].Contains(curQuestionKey)) { testData.textTestResult.extra++; }
                 }
-                else { NextScene(1);}
+                Debug.Log("test result = " + JsonUtility.ToJson(testData.textTestResult));
+                Destroy(rootObj);
+                if(questionsCount > testData.textTestResult.answers.Count) { 
+                    string[] curQuestion = Data.getQuestionIndex(userLang, testData.textTestResult.answers.Count);
+                    int.TryParse(curQuestion[0], out curQuestionKey);
+                    string notes = (testData.textTestResult.answers.Count + 1).ToString() + "/" + questionsCount.ToString();
+                    rootObj = utility.ShowDialog(curQuestion[1], notes, "NextQuestion", Data.getMessage(userLang, "yes"), Data.getMessage(userLang, "not"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
+                } else {
+                    testData.textTestResult.totalTime = Mathf.RoundToInt(userSceneDataTime[0] * 1000);
+                    NextScene(1); }
                 break;
             default: Debug.Log("clickSelectEvent not found action for " + name); break;
         }
@@ -446,7 +458,7 @@ public class Main : MonoBehaviour
         isActionSave = false;
         isHintDisplay = false;
         isDisplayTimer = false;
-        SceneEventSystem.enabled = false;
+        SceneEventSystem.enabled = false;        
         Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = false;
         //Debug.Log("curScene=" + curScene +" delta="+ delta+" "+ JsonUtility.ToJson(curSnenaMotionData));
         if (delta > 0){ testData.snenasMotionData.Add(curSnenaMotionData);}        
@@ -502,7 +514,7 @@ public class Main : MonoBehaviour
                 rootObj = utility.ShowMessage(Data.getMessage(userLang, "IntroColTest"), "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
                 break;
             case 8: // start color test 
-                selColorNames.Clear();
+                testData.colorTestResult.selected.Clear();
                 rootObj = colorTest.showColors("selAllCol");
                 GameObject msgObj2 = utility.ShowMessage(Data.getMessage(userLang, "IntroColTest"), "", "Start", new Vector2(1200, 200), TextAnchor.MiddleCenter, new Vector2(0, 20));
                 msgObj2.transform.SetParent(rootObj.transform);
@@ -512,11 +524,14 @@ public class Main : MonoBehaviour
                 rootObj = utility.ShowMessage(Data.getMessage(userLang, "IntroTextTest"), "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40)); 
                 break;
             case 10: // start a text test
-                selTextNames.Clear();
+                testData.textTestResult.answers.Clear();
+                testData.textTestResult.extra = 0;
+                testData.textTestResult.stabil = 0;
+                testData.textTestResult.totalTime = 0;
                 questionsCount = Data.getQuestionsCount(userLang);
-                string[] curQuestion = Data.getQuestionIndex(userLang, selTextNames.Count);
+                string[] curQuestion = Data.getQuestionIndex(userLang, testData.textTestResult.answers.Count);
                 int.TryParse(curQuestion[0],out curQuestionKey);
-                string notes = (selTextNames.Count + 1).ToString() +"/"+ questionsCount.ToString();
+                string notes = (testData.textTestResult.answers.Count + 1).ToString() +"/"+ questionsCount.ToString();
                 rootObj = utility.ShowDialog(curQuestion[1], notes, "NextQuestion", Data.getMessage(userLang, "yes"), Data.getMessage(userLang, "not"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
                 break;
             case 11: // show results
@@ -527,7 +542,9 @@ public class Main : MonoBehaviour
                 break;
             default: Debug.Log("Not Found current scene index"); break;
         }
-        userSceneDataTime = 0.0f;
+        userSceneDataTime[0] = 0f;
+        userSceneDataTime[1] = 0f;
+        trackingTime[1] = 0f;
         SceneEventSystem.enabled = true;
         isActionSave = true;
     }
@@ -554,22 +571,28 @@ public class Main : MonoBehaviour
                 // using (StreamWriter streamWriter = File.CreateText("c:\\11\\unityJson.txt")){streamWriter.Write(json);}
                 // Debug.Log(json);
                 connection.putDataBlob("/putVrData", testData);
-                testData = new TestData(){
-                    startDateTime = System.DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss"),
-                    deviceID = deviceID,
-                    lang = userLang,
-                    gyro = checkGyro,
-                    deviceInfo = deviceDesc,
-                    userEmail = userEmail, 
-                    userZone = userZone,
-                    snenasMotionData = new List<SnenaMotionData>(),
-                    rightObjectsList = new List<TestObjects>(),
-                    selectedObjectsList = new List<TestObjects>()
-                    
-                }; 
+                initTestData();
                 curSnenaMotionData = new SnenaMotionData() { i = 0, act = new List<UserActivity>() };                        
             }else{Debug.Log("No data send to server");}
         }
+    }
+
+    private void initTestData(){
+        testData = new TestData()
+        {
+            startDateTime = System.DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss"),
+            deviceID = deviceID,
+            lang = userLang,
+            gyro = checkGyro,
+            deviceInfo = deviceDesc,
+            userEmail = userEmail,
+            userZone = userZone,
+            snenasMotionData = new List<SnenaMotionData>(),
+            rightObjectsList = new List<TestObjects>(),
+            selectedObjectsList = new List<TestObjects>(),
+            colorTestResult = new ColorTestResult(),
+            textTestResult = new TextTestResult()
+        };
     }
 
     // on finish a test
@@ -577,7 +600,7 @@ public class Main : MonoBehaviour
         hintText = null;
         isHintDisplay = false;
         if (testData.selectedObjectsList[testData.selectedObjectsList.Count - 1].time == 0) { 
-            testData.selectedObjectsList[testData.selectedObjectsList.Count - 1].time = Mathf.RoundToInt(userSceneDataTime * 1000);
+            testData.selectedObjectsList[testData.selectedObjectsList.Count - 1].time = Mathf.RoundToInt(userSceneDataTime[0] * 1000);
             testData.selectedObjectsList[testData.selectedObjectsList.Count - 1].rights = testsConfig[curTestIndex, 3];
             if (TimerCanvas){ Destroy(TimerCanvas); }        
             //Debug.Log("Ended Test="+ curTestIndex+" json=" + JsonUtility.ToJson(testData));

@@ -91,7 +91,7 @@ public class Data {
         { "English", MessagesEng},
     };
 
-    private static readonly Dictionary<string, List<int>> Answers = new Dictionary<string, List<int>>(){
+    public static readonly Dictionary<string, List<int>> Answers = new Dictionary<string, List<int>>(){
         ["+"] = new List<int>{1, 3, 8, 10, 13, 17, 22, 25, 27, 39, 44, 46, 49, 53, 56},
         ["-"] = new List<int>{ 5, 15, 20, 29, 32, 34, 37, 41, 51},
         ["n"] = new List<int>{ 2, 4, 7, 9, 11, 14, 16, 19, 21, 23, 26, 28, 31, 33, 35, 38, 40, 43, 45, 47, 50, 52, 55, 57}
