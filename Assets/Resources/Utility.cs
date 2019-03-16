@@ -11,6 +11,7 @@ public class Utility {
     public Sprite uisprite; // default img for text background
     private Text TextDebug; // Debug object
     private Main main;
+    private Material matFont;
 
     public Utility(Main mainScript, bool isVRLog) {
         main = mainScript;
@@ -20,6 +21,9 @@ public class Utility {
         GameObject goDebug = GameObject.Find("txtDebug");
         Texture2D tex = new Texture2D(128, 128);
         uisprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
+        //matFont = new Material(Shader.Find("UI/Default Font"));
+        matFont = new Material(Shader.Find("GoogleVR/UI/Overlay Font"));
+        Debug.Log(matFont);
         if (isDebug) {            
             if (goDebug) { TextDebug = goDebug.GetComponent<Text>(); }
             else {
@@ -103,6 +107,7 @@ public class Utility {
         Text text = textObject.AddComponent<Text>();
         text.supportRichText = true;
         text.text = message;
+        text.material = matFont;
         text.fontSize = fontSize;
         if (fontStyle == 1) { text.fontStyle = FontStyle.Bold; }
         text.font = defaultFont;
@@ -220,4 +225,49 @@ public class Utility {
         // showTutorialsMenu(rootMenu);
         return rootObj;
     }
+    private GameObject progressBar(string name, string label, float value, Vector2 loc, Transform root) {
+        GameObject gm = new GameObject(name);
+        gm.transform.position = new Vector3(loc.x, loc.y, 0);
+        gm.transform.SetParent(root, false);        
+        Texture2D tex2 = new Texture2D(600, 600);
+        Sprite sprite = Sprite.Create(tex2, new Rect(0.0f, 0.0f, 600, 100), new Vector2(300f, 300f), 100.0f);
+        string sValue = (Mathf.Round(value * 100)).ToString();
+        GameObject txtObj = CreateText(gm.transform, new Vector2(270, 10), new Vector2(1000, 70), label+":         " + sValue + "%", 60, 0, TextAnchor.LowerLeft);        
+        Image img = gm.AddComponent<Image>();
+        img.sprite = sprite;
+        img.material = matFont;
+        img.fillMethod = Image.FillMethod.Horizontal;
+        img.type = Image.Type.Filled;
+        img.fillOrigin = (int) Image.OriginHorizontal.Right;
+        img.fillAmount = value;
+        img.color = new Vector4(0.8f, 0.02f, 0.02f, 1f);
+        RectTransform transform = gm.GetComponent<RectTransform>();
+        transform.sizeDelta = new Vector2(800, 70);
+        return gm;
+    }
+
+    public GameObject showResult(float resS, float resE)
+
+    {
+        Vector2 size = new Vector2(1200, 400);
+        GameObject newCanvas = CreateCanwas("rootMenu", new Vector3(0, main.baseLoc, 12), size);
+        GameObject panel = new GameObject("ResultPanel");
+        panel.AddComponent<CanvasRenderer>();
+        Image img = panel.AddComponent<Image>();
+        img.color = new Vector4(0.3f, 0.3f, 0.7f, 0.3f);
+        RectTransform panelTransform = panel.GetComponent<RectTransform>();
+        panel.transform.SetParent(newCanvas.transform, true);
+        panelTransform.localScale = new Vector3(1f, 1f, 1f);
+        panelTransform.localRotation = Quaternion.AngleAxis(180, Vector3.up);
+        panelTransform.localPosition = new Vector3(0, 0, 0);
+        panelTransform.sizeDelta = new Vector2(1400, 1000);       
+        //Debug.Log ("Sprite=" + sprite.texture.height);
+        // stress
+        progressBar("Stress", "Your stress", resS, new Vector2(-150,100),panelTransform);
+        progressBar("Effi", "Your Effi", resE, new Vector2(-150, 200), panelTransform);
+
+        CreateButton(panelTransform, "Button0", "btnExit", "exit", "0", new Vector3(100-size.x / 2, -40 - size.y, 0), new Vector2(300, 60));
+        return newCanvas;
+    }
+
 }

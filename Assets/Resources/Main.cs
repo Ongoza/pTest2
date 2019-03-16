@@ -6,23 +6,29 @@ using UnityEngine.EventSystems;
 
 using System.IO; //save to file
 
-//Выводить результаты
+// Выводить результаты в виде таблицы (название шкалы, значение, описание краткое, кнопка подробности)
+// экран подробности - детально описание психотипа
 //    - уровень темперамента в трех шкалах(флегметик 40% сангвиник 60% устойчивость(сила, стабильность) 30 %)
 //     устойчивость как отношения большей шкалы к произведению косинуса на максимальное значение большей шкалы
 //     - уровень стресса и эффективность, темперамент
-//Окно информации о разработчике и цели проекта на последнем экране
-//переключение языков на первом экране
-//Сделать стрелку указатель на текстовое сообщение
-//Сделать заставку с анимацитей ввода текста(Психологические тесты) и появление 3д модели VR
-//Поправить проверку на гиро и девайс инфо  
+// Окно информации о разработчике и цели проекта на последнем экране
+// Это экспериментальный тест цель которого определить альтернативыне по отношению к классическим способы оценки психических характеристик
+// переключение языков на первом экране
+// имя, выбор пола и дата рождения, почта
+// сделать меню выбора теста для повторного прохождения
+// Сделать стрелку указатель на текстовое сообщение
+// Сделать заставку с анимацитей ввода текста(Психологические тесты) и появление 3д модели VR
+// Поправить проверку на гиро и девайс инфо  
 // переводы текста на английский, испанский, польский
-// сделать убегающий объект в 2 паузы между вопросами
+// сделать анимацию повления/исчезновения вопросов
 // андроид и аппл
+// сделать 3 тест по поиску фигур с эмоциональными состояниями ( на трудном уровне,на легком,  с помехами, на невозможном уровне + эмоции наблюдателя (разные для разного пола))
+// 3 тест будет загонять тестируемого в эмоциональное состояние, а наблюдатель усиливать эффект
 
 public class Main : MonoBehaviour
 {
     // global temp variables
-    private int curScene = 10; //  start scene index 
+    private int curScene = 11; //  start scene index 
     private bool isDebug = false; // VR debug enable
     private bool isNet = false; // network enable
 
@@ -535,10 +541,11 @@ public class Main : MonoBehaviour
                 rootObj = utility.ShowDialog(curQuestion[1], notes, "NextQuestion", Data.getMessage(userLang, "yes"), Data.getMessage(userLang, "not"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
                 break;
             case 11: // show results
-                timerShowResult[2] = timerShowResult[1];
-                timerShowResult[0] = 1 ;                
-                string msg3 = string.Format(Data.getMessage(userLang, "Result"), testsConfig[0, 3], testsConfig[0, 2], testsConfig[1, 3], testsConfig[1, 2], Mathf.Floor(testsConfig[curTestIndex, 5] - testTime).ToString());
-                rootObj = utility.ShowMessage(msg3, "Exit", "Repeat", new Vector2(1400, 600), TextAnchor.MiddleLeft, new Vector2(25,50));
+               // timerShowResult[2] = timerShowResult[1];
+               // timerShowResult[0] = 1;
+                utility.showResult(0.4f,0.6f);
+                //string msg3 = string.Format(Data.getMessage(userLang, "Result"), testsConfig[0, 3], testsConfig[0, 2], testsConfig[1, 3], testsConfig[1, 2], Mathf.Floor(testsConfig[curTestIndex, 5] - testTime).ToString());
+                //rootObj = utility.ShowMessage(msg3, "Exit", "Repeat", new Vector2(1400, 600), TextAnchor.MiddleLeft, new Vector2(25,50));
                 break;
             default: Debug.Log("Not Found current scene index"); break;
         }
