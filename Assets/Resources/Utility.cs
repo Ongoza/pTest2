@@ -148,7 +148,7 @@ public class Utility {
     }
 
     // display the email input scena
-    public GameObject ShowKeyboard()
+    public GameObject ShowKeyboard(string userLang)
     { // show keyboard input
         int len = 12; int width = 60; int startPosX = -342; int startPosY = 125; int i = 0; int j = 0;
         GameObject rootObj = CreateCanwas("rootKeyoard", new Vector3(0, -3, 12), new Vector2(770, 350));
@@ -174,7 +174,7 @@ public class Utility {
             imgKey.color = new Vector4(0.5f, 0.5f, 0.8f, 1);
             i++;
         }
-        CreateButton(rootObj.transform, "Enter", "Start", "Enter", "0_10_10", new Vector3(0, -230, 0), new Vector2(150, 60));
+        CreateButton(rootObj.transform, "Enter", Data.getMessage(userLang, "btnNext"), "Enter", "0_10_10", new Vector3(0, -230, 0), new Vector2(150, 60));
         GameObject InputMsg = new GameObject("InputMsg");
         InputMsg.transform.SetParent(rootObj.transform);
         RectTransform brInputMsg = InputMsg.AddComponent<RectTransform>();
@@ -225,30 +225,49 @@ public class Utility {
         // showTutorialsMenu(rootMenu);
         return rootObj;
     }
+
     private GameObject progressBar(string name, string label, float value, Vector2 loc, Transform root) {
         GameObject gm = new GameObject(name);
         gm.transform.position = new Vector3(loc.x, loc.y, 0);
-        gm.transform.SetParent(root, false);        
+        gm.transform.SetParent(root, false);
+        
         Texture2D tex2 = new Texture2D(600, 600);
         Sprite sprite = Sprite.Create(tex2, new Rect(0.0f, 0.0f, 600, 100), new Vector2(300f, 300f), 100.0f);
+        //Sprite spriteBack = Sprite.Create(tex2, new Rect(0.0f, 0.0f, 600, 100), new Vector2(300f, 300f), 100.0f);
         string sValue = (Mathf.Round(value * 100)).ToString();
-        GameObject txtObj = CreateText(gm.transform, new Vector2(270, 10), new Vector2(1000, 70), label+":         " + sValue + "%", 60, 0, TextAnchor.LowerLeft);        
-        Image img = gm.AddComponent<Image>();
+        CreateText(gm.transform, new Vector2(750, 10), new Vector2(1000, 70), label+":", 60, 0, TextAnchor.LowerRight);
+        // drow background
+        GameObject gm1 = new GameObject(name+"_back");
+        gm1.transform.position = new Vector3(-120, 0, 0);
+        gm1.transform.SetParent(gm.transform, false);        
+        Image img = gm1.AddComponent<Image>();
         img.sprite = sprite;
         img.material = matFont;
         img.fillMethod = Image.FillMethod.Horizontal;
         img.type = Image.Type.Filled;
         img.fillOrigin = (int) Image.OriginHorizontal.Right;
-        img.fillAmount = value;
-        img.color = new Vector4(0.8f, 0.02f, 0.02f, 1f);
-        RectTransform transform = gm.GetComponent<RectTransform>();
-        transform.sizeDelta = new Vector2(800, 70);
+        img.fillAmount = 1;
+        img.color = new Vector4(0.68f, 0.68f, 0.7f, 1f);
+        gm1.GetComponent<RectTransform>().sizeDelta = new Vector2(700, 70);
+        // drow current value
+        GameObject gm2 = new GameObject(name + "_value");
+        gm2.transform.position = new Vector3(-120, 0, 0);
+        gm2.transform.SetParent(gm.transform, false);        
+        Image img2 = gm2.AddComponent<Image>();
+        img2.sprite = sprite;
+        img2.material = matFont;
+        img2.fillMethod = Image.FillMethod.Horizontal;
+        img2.type = Image.Type.Filled;
+        img2.fillOrigin = (int)Image.OriginHorizontal.Right;
+        img2.fillAmount = value;
+        img2.color = new Vector4(0.34f, 0.41f, 0.94f, 1f);
+        gm2.GetComponent<RectTransform>().sizeDelta = new Vector2(700, 70);
+        //+
+        CreateText(gm2.transform, new Vector2(-450, 10), new Vector2(1000, 70), sValue + "%", 60, 0, TextAnchor.LowerLeft);
         return gm;
     }
 
-    public GameObject showResult(float resS, float resE)
-
-    {
+    public GameObject showResult(string userLang, float resS, float resE, float resF, float resH){
         Vector2 size = new Vector2(1200, 400);
         GameObject newCanvas = CreateCanwas("rootMenu", new Vector3(0, main.baseLoc, 12), size);
         GameObject panel = new GameObject("ResultPanel");
@@ -260,13 +279,50 @@ public class Utility {
         panelTransform.localScale = new Vector3(1f, 1f, 1f);
         panelTransform.localRotation = Quaternion.AngleAxis(180, Vector3.up);
         panelTransform.localPosition = new Vector3(0, 0, 0);
-        panelTransform.sizeDelta = new Vector2(1400, 1000);       
-        //Debug.Log ("Sprite=" + sprite.texture.height);
-        // stress
-        progressBar("Stress", "Your stress", resS, new Vector2(-150,100),panelTransform);
-        progressBar("Effi", "Your Effi", resE, new Vector2(-150, 200), panelTransform);
+        panelTransform.sizeDelta = new Vector2(1600, 1000);
+        
+        CreateText(panelTransform, new Vector2(0, 300), new Vector2(1400, 70), Data.getMessage(userLang, "Res_C"), 60, 0, TextAnchor.LowerCenter);
+        progressBar("Stress", Data.getMessage(userLang, "Res_C_S"), resS, new Vector2(-150, 200),panelTransform);
+        progressBar("Effi", Data.getMessage(userLang, "Res_C_E"), resE, new Vector2(-150, 100), panelTransform);
 
-        CreateButton(panelTransform, "Button0", "btnExit", "exit", "0", new Vector3(100-size.x / 2, -40 - size.y, 0), new Vector2(300, 60));
+        CreateText(panelTransform, new Vector2(0, -50), new Vector2(1400, 70), Data.getMessage(userLang, "Res_T"), 60, 0, TextAnchor.LowerCenter);
+        if (resF == 0) { resF = 0.001f; }
+        if (resH == 0) { resH = 0.001f; }
+        float a = Mathf.Atan2(resF,resH);
+        string[] pTypeName = new string[2];
+        float[] pTypeValue = new float[2];
+        float mid = Mathf.PI/4;
+
+        if (resF>0 || a > mid ){
+            pTypeName[0] = "Choleric";
+            pTypeName[1] = "Melancholic";
+            pTypeValue[0] = 0.3f;
+            pTypeValue[1] = 0.3f;
+        }else if(resF<0 || a > mid){
+            pTypeName[0] = "Phlegmatic";
+            pTypeName[1] = "Sanguine";
+            pTypeValue[0] = 0.3f;
+            pTypeValue[1] = 0.3f;
+        }else if (resF>0 || a > mid){
+            pTypeName[0] = "Phlegmatic";
+            pTypeName[1] = "Sanguine";
+            pTypeValue[0] = 0.3f;
+            pTypeValue[1] = 0.3f;
+        }else{
+            pTypeName[0] = "Phlegmatic";
+            pTypeName[1] = "Sanguine";
+            pTypeValue[0] = 0.3f;
+            pTypeValue[1] = 0.3f;
+        }
+        Debug.Log("a="+ a+" str1="+ pTypeName[0] + " " + pTypeValue[0] + " str2=" + pTypeName[1] + " " + pTypeValue[1]);
+        progressBar("f/h", Data.getMessage(userLang, pTypeName[0]), f, new Vector2(-150, -150), panelTransform);
+        progressBar("m/s", Data.getMessage(userLang, pTypeName[1]), h, new Vector2(-150, -250), panelTransform);
+       // progressBar("m/s", "Temperamt Stability", resE, new Vector2(-150, -350), panelTransform);
+
+        CreateButton(panelTransform, "Button0", Data.getMessage(userLang, "btnExit"), "Exit", "0", new Vector3(100-size.x / 2, -40 - size.y, 0), new Vector2(300, 60));
+        CreateButton(panelTransform, "Button1", Data.getMessage(userLang, "btnRepeat"), "Repeat", "0", new Vector3(0, -40 - size.y, 0), new Vector2(300, 60));
+        CreateButton(panelTransform, "Button2", Data.getMessage(userLang, "btnAbout"), "Next", "0", new Vector3(-100 + size.x / 2, -40 - size.y, 0), new Vector2(300, 60));
+
         return newCanvas;
     }
 

@@ -6,13 +6,6 @@ using UnityEngine.EventSystems;
 
 using System.IO; //save to file
 
-// Выводить результаты в виде таблицы (название шкалы, значение, описание краткое, кнопка подробности)
-// экран подробности - детально описание психотипа
-//    - уровень темперамента в трех шкалах(флегметик 40% сангвиник 60% устойчивость(сила, стабильность) 30 %)
-//     устойчивость как отношения большей шкалы к произведению косинуса на максимальное значение большей шкалы
-//     - уровень стресса и эффективность, темперамент
-// Окно информации о разработчике и цели проекта на последнем экране
-// Это экспериментальный тест цель которого определить альтернативыне по отношению к классическим способы оценки психических характеристик
 // переключение языков на первом экране
 // имя, выбор пола и дата рождения, почта
 // сделать меню выбора теста для повторного прохождения
@@ -332,10 +325,10 @@ public class Main : MonoBehaviour
                 testData.userEmail = userEmail;                 
                 NextScene(1);
                 break;
-            case "Exit":
+            case "Exit": // exit from app
                 sendDataToServer();
-                curScene = 0;
-                NextScene(0); break;
+                Application.Quit();
+                break;
             case "selOneCol":                
                 StartCoroutine(FadeTo("b_"+ curfocusObj));
                 int colorIndex = 0;
@@ -390,6 +383,12 @@ public class Main : MonoBehaviour
                 } else {
                     testData.textTestResult.totalTime = Mathf.RoundToInt(userSceneDataTime[0] * 1000);
                     NextScene(1); }
+                break;
+            case "Back": NextScene(-1); break;
+            case "Repeat":
+                sendDataToServer();
+                curScene = 0;
+                NextScene(0);
                 break;
             default: Debug.Log("clickSelectEvent not found action for " + name); break;
         }
@@ -475,15 +474,15 @@ public class Main : MonoBehaviour
         if (TimerCanvas) { Destroy(TimerCanvas);}
         switch (curScene){
             case 0: // show a start message
-                rootObj = utility.ShowMessage(Data.getMessage(userLang, "Intro"), "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
+                rootObj = utility.ShowMessage(Data.getMessage(userLang, "Intro"), "Next", Data.getMessage(userLang, "btnNext"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
                 break;
             case 1: // show a keyboard for email input
-                rootObj = utility.ShowKeyboard();
+                rootObj = utility.ShowKeyboard(userLang);
                 break;
             case 2: // start select a color
                 rootObj = colorTest.showColors("selOneCol");
                 string msg = Data.getMessage(userLang, "selOneCol");
-                GameObject msgObj = utility.ShowMessage(msg, "", "Start", new Vector2(1200, 100), TextAnchor.MiddleCenter, new Vector2(0, 10));
+                GameObject msgObj = utility.ShowMessage(msg, "", "", new Vector2(1200, 100), TextAnchor.MiddleCenter, new Vector2(0, 10));
                 msgObj.transform.SetParent(rootObj.transform);
                 msgObj.transform.position = new Vector3(0,4.4f,16);
                 break;
@@ -492,7 +491,7 @@ public class Main : MonoBehaviour
                 string msg1 = string.Format(Data.getMessage(userLang, "Test1"), Data.getMessage(userLang, "color_" + testsConfig[curTestIndex, 0]), Data.getMessage(userLang, "obj_" + testsConfig[curTestIndex, 0]));
                 //Debug.Log("Test1=" + msg1);
                 rootObj = new GameObject("root");
-                GameObject rootMsg = utility.ShowMessage(msg1, "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
+                GameObject rootMsg = utility.ShowMessage(msg1, "Next", Data.getMessage(userLang, "btnStart"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
                 rootMsg.transform.SetParent(rootObj.transform);
                 utility3D.createTarget(rootObj, testsConfig[0, 1]);
                 break;
@@ -506,7 +505,7 @@ public class Main : MonoBehaviour
                 curTestIndex = 1;
                 rootObj = new GameObject("root");
                 string msg2 = string.Format(Data.getMessage(userLang, "Test2"), Data.getMessage(userLang, "color_" + testsConfig[curTestIndex, 1]), Data.getMessage(userLang, "obj_" + testsConfig[curTestIndex, 0]), testsConfig[curTestIndex, 5]);
-                GameObject rootMsg2 = utility.ShowMessage(msg2, "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
+                GameObject rootMsg2 = utility.ShowMessage(msg2, "Next", Data.getMessage(userLang, "btnStart"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
                 rootMsg2.transform.SetParent(rootObj.transform);
                 utility3D.createTarget(rootObj, testsConfig[0, 1]);
                 break;
@@ -517,17 +516,17 @@ public class Main : MonoBehaviour
                 isDisplayTimer = true;
                 break;
             case 7: // show a color test start message
-                rootObj = utility.ShowMessage(Data.getMessage(userLang, "IntroColTest"), "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
+                rootObj = utility.ShowMessage(Data.getMessage(userLang, "IntroColTest"), "Next", Data.getMessage(userLang, "btnStart"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
                 break;
             case 8: // start color test 
                 testData.colorTestResult.selected.Clear();
                 rootObj = colorTest.showColors("selAllCol");
-                GameObject msgObj2 = utility.ShowMessage(Data.getMessage(userLang, "IntroColTest"), "", "Start", new Vector2(1200, 200), TextAnchor.MiddleCenter, new Vector2(0, 20));
+                GameObject msgObj2 = utility.ShowMessage(Data.getMessage(userLang, "IntroColTest"), "", Data.getMessage(userLang, "btnStart"), new Vector2(1200, 200), TextAnchor.MiddleCenter, new Vector2(0, 20));
                 msgObj2.transform.SetParent(rootObj.transform);
                 msgObj2.transform.position = new Vector3(0, 5.4f, 16);
                 break;
             case 9: // show a start text test message
-                rootObj = utility.ShowMessage(Data.getMessage(userLang, "IntroTextTest"), "Next", "Start", new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40)); 
+                rootObj = utility.ShowMessage(Data.getMessage(userLang, "IntroTextTest"), "Next", Data.getMessage(userLang, "btnStart"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40)); 
                 break;
             case 10: // start a text test
                 testData.textTestResult.answers.Clear();
@@ -541,11 +540,13 @@ public class Main : MonoBehaviour
                 rootObj = utility.ShowDialog(curQuestion[1], notes, "NextQuestion", Data.getMessage(userLang, "yes"), Data.getMessage(userLang, "not"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
                 break;
             case 11: // show results
-               // timerShowResult[2] = timerShowResult[1];
-               // timerShowResult[0] = 1;
-                utility.showResult(0.4f,0.6f);
-                //string msg3 = string.Format(Data.getMessage(userLang, "Result"), testsConfig[0, 3], testsConfig[0, 2], testsConfig[1, 3], testsConfig[1, 2], Mathf.Floor(testsConfig[curTestIndex, 5] - testTime).ToString());
-                //rootObj = utility.ShowMessage(msg3, "Exit", "Repeat", new Vector2(1400, 600), TextAnchor.MiddleLeft, new Vector2(25,50));
+                float cnt = Data.getQuestionsCount(userLang)/2;
+                float resF = (testData.textTestResult.extra - cnt/2)/ cnt;
+                float resH = (testData.textTestResult.stabil - cnt/2) / cnt;
+                rootObj = utility.showResult(userLang, testData.colorTestResult.stress, testData.colorTestResult.energy, resF, resH);
+                break;
+            case 12: // show a start text test message
+                rootObj = utility.ShowMessage(Data.getMessage(userLang, "msgAbout"), "Back", Data.getMessage(userLang, "btnBack"), new Vector2(1200, 600), TextAnchor.MiddleCenter, new Vector2(0, 40));
                 break;
             default: Debug.Log("Not Found current scene index"); break;
         }

@@ -52,6 +52,22 @@ public class Data {
         ,{ "not", "Нет" }
         ,{"IntroColTest","Выберите цвета которые вам нравятся один за одним."}
         ,{"IntroTextTest","Ответьте \"Да\" или \"Нет\" на 30 вопросов."}
+        ,{"Res_C","<b>Ваше текущее состояние:</b>"}
+        ,{"Res_C_S","Уровень стресса"}
+        ,{"Res_C_E","Концентрация"}
+        ,{"Res_T","<b>Ваш темперамент:</b>"}
+        ,{"Phlegmatic","Флегматик на"}
+        ,{"Sanguine","Сангвиник на"}
+        ,{"Melancholic","Меланхолик на"}
+        ,{"Choleric","Холерик на"}
+        ,{"btnExit","Выход"}
+        ,{"btnAbout","О программе"}        
+        ,{"btnRepeat","Повторить"}
+        ,{"btnMore","больше..."}
+        ,{"btnBack","Вернуться"}
+        ,{"btnNext","Далее"}
+        ,{"btnStart","начать"}
+        ,{"msgAbout","Эта программа разработана в ракмах проекта www.ongoza.com по переносу психологических тестов в виртуальную реальность."}
     };
 
     private static readonly Dictionary<string, string> KeyList = new Dictionary<string, string>() {
