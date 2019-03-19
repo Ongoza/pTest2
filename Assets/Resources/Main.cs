@@ -8,20 +8,20 @@ using System.IO; //save to file
 
 // переключение языков на первом экране
 // имя, выбор пола и дата рождения, почта
-// сделать меню выбора теста для повторного прохождения
 // Сделать стрелку указатель на текстовое сообщение
 // Сделать заставку с анимацитей ввода текста(Психологические тесты) и появление 3д модели VR
 // Поправить проверку на гиро и девайс инфо  
 // переводы текста на английский, испанский, польский
 // сделать анимацию повления/исчезновения вопросов
 // андроид и аппл
-// сделать 3 тест по поиску фигур с эмоциональными состояниями ( на трудном уровне,на легком,  с помехами, на невозможном уровне + эмоции наблюдателя (разные для разного пола))
+
+// сделать тест N3 по поиску фигур с эмоциональными состояниями ( на трудном уровне, на легком,  с помехами, на невозможном уровне + эмоции наблюдателя (разные для разного пола))
 // 3 тест будет загонять тестируемого в эмоциональное состояние, а наблюдатель усиливать эффект
 
 public class Main : MonoBehaviour
 {
     // global temp variables
-    private int curScene = 11; //  start scene index 
+    private int curScene = 0; //  start scene index 
     private bool isDebug = false; // VR debug enable
     private bool isNet = false; // network enable
 
@@ -33,7 +33,8 @@ public class Main : MonoBehaviour
     public int precisionDec = 100; // number dec after point in movement control 1 - 0, 10-0.0, 100 - 0.00
     public float baseLoc = 2;
     private GameObject camFade; // camera Fade object
-    public Text TextEmail; // user email   
+    public string userLang;
+    public Text TextInput; // user email   
     EventSystem SceneEventSystem; // turn on/off eventSystem   
     //private string startDateTime = ""; // date and time the test starting
     private bool isActionSave = false;     
@@ -43,10 +44,8 @@ public class Main : MonoBehaviour
     private GameObject rootObj; // root of objects 
     private Connection connection;   
     private Text TextDebug; // Debug object
-    private string deviceID;
-    public string userLang = "Russian";
-    private string userZone;
-    private string userEmail;
+    private UserData userData;
+    private string userInput = "";
     // variables for cursor
     private float defaultTime = 1f; // time in sec focus on an obj for select
     private Material timedPointer;
@@ -75,8 +74,6 @@ public class Main : MonoBehaviour
                                // testsConfig[curTestIndex,5] time limit for the second test in sec. 0 - unlimit
     public int curTestIndex = 0; //a current test number
     public bool isHintDisplay = false; // display hint during a test
-    private int checkGyro = 0;
-    private string deviceDesc;
     private bool isDisplayTimer = false;// display timer during a test
     public float testTime;// test time left
     public Text hintText;
@@ -92,23 +89,21 @@ public class Main : MonoBehaviour
     private int curQuestionKey; // curent question key 
     private int questionsCount; // total number of questions
 
-    void Start(){                    
-        checkGyro = 0;
+    void Start(){
+        int checkGyro = 0;
+        // pass gyroscope cheking in editor mode
         #if UNITY_EDITOR
             Debug.Log("Unity Editor!!!!");
             checkGyro = 1;
         #else
-        if( SystemInfo.supportsGyroscope){checkGyro = 1;}
+            if( SystemInfo.supportsGyroscope){checkGyro = 1;}
         #endif
-        deviceID = SystemInfo.deviceUniqueIdentifier.ToString();
-        userZone = System.TimeZoneInfo.Local.ToString();
+
         GameObject ObjEventSystem = GameObject.Find("GvrEventSystem");
-        if (ObjEventSystem)
-        {
+        if (ObjEventSystem){
             SceneEventSystem = ObjEventSystem.GetComponent<EventSystem>();
             if (SceneEventSystem) { SceneEventSystem.enabled = false; }
-        }
-        else { Debug.Log("Can not find Event System"); }
+        } else { Debug.Log("Can not find Event System"); }
         Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = false;
         GameObject camTimedPointer = GameObject.Find("GvrReticlePointer");
         timedPointer = camTimedPointer.GetComponent<Renderer>().material;
@@ -118,26 +113,36 @@ public class Main : MonoBehaviour
         utility = new Utility(this, isDebug);
         utility3D = new Utility3D(this, utility);
         colorTest = new ColorTest(this, utility);
-        if (checkGyro > 0){ Init(); } else { StartCoroutine(PauseInit(7));}
+        if (checkGyro > 0){ Init(checkGyro); } else { StartCoroutine(PauseInit(7));}
     }
 
-    void Init() {
+    void Init(int g) {
         camFade = GameObject.Find("camProtector");
-        try{
-            deviceDesc = "#_"+SystemInfo.deviceModel+",#_"+ SystemInfo.deviceType + ",#_" + SystemInfo.deviceName + ",#_" + SystemInfo.operatingSystem;
-            Debug.Log(deviceDesc);
+        string deviceDesc = "";
+        try{deviceDesc = "#_"+SystemInfo.deviceModel+",#_"+ SystemInfo.deviceType + ",#_" + SystemInfo.deviceName + ",#_" + SystemInfo.operatingSystem; 
         }catch (System.Exception e){Debug.Log(e);}
+        Debug.Log("deviceDesc: " + deviceDesc);
         //utility.logDebug("Init");
-        initTestData();
-        //utility.logDebug("Start 1");
-        curSnenaMotionData = new SnenaMotionData() { i = 0, act = new List<UserActivity>() };
-        lastAction = new float[14];        
-        //utility.logDebug("Start 2");        
+        userData = new UserData(){
+            Name = "",
+            Email = "",
+            Birth = "",
+            Gender = "",
+            Input = Input.touchSupported.ToString(),
+            Zone = System.TimeZoneInfo.Local.ToString(),
+            deviceID = SystemInfo.deviceUniqueIdentifier.ToString(),
+            lang = userLang,
+            ip = "",
+            txtVersion = Data.getVersion(),
+            gyro = g,
+            ipInfo = "",
+            deviceInfo = deviceDesc
+        };
+        Debug.Log("Init "+JsonUtility.ToJson(userData));
+        initTestData();      
         // StartCoroutine(fadeScene(2f, true, new Color(0.2f, 0.2f, 0.2f, 1), "Main"));
         //StartCoroutine(RotateCamera(2f, 0.0001f, "End rotation"));
-        string srv = Data.getConnectionData()["ServerIP"] + ":" + Data.getConnectionData()["ServerPort"];
-        //Debug.Log(string.Join(";", Data.getConnectionData()["SeverPort"]));
-        connection = new Connection(srv, isNet);
+        connection = new Connection(Data.getConnectionData()["ServerIP"] + ":" + Data.getConnectionData()["ServerPort"], isNet);
         //testConnection();
         Debug.Log("Start end");
         NextScene(0);
@@ -155,19 +160,15 @@ public class Main : MonoBehaviour
        connection.putDataBlob("/putVrData", testData2);
     }
 
-    public IEnumerator PauseInit(float timer)
-    {
+    public IEnumerator PauseInit(float timer){
         float currCountdownValue = timer;
-        while (currCountdownValue > 0)
-        {
+        while (currCountdownValue > 0){
             //Debug.Log("Countdown: " + currCountdownValue);
             yield return new WaitForSeconds(1.0f);
             currCountdownValue--;
         }
-        Init();
+        Init(0);
     }
-
-    
 
     void Update(){
         //if (Input.GetKeyDown(KeyCode.Escape)){
@@ -316,13 +317,16 @@ public class Main : MonoBehaviour
                 break;
             case  "Keyboard": // email input scena, typing
                 if (curfocusObj.Contains("DEL")){
-                    string str = TextEmail.text;
-                    if (str.Length > 0) { TextEmail.text = str.Substring(0, str.Length - 1); }
-                } else { if (TextEmail) { TextEmail.text += curfocusObj; } }
+                    string str = TextInput.text;
+                    if (str.Length > 0) { TextInput.text = str.Substring(0, str.Length - 1); }
+                } else { if (TextInput) { TextInput.text += curfocusObj; } }
                 break;
-            case "Enter": // email input scena, finish
-                userEmail = TextEmail.text;
-                testData.userEmail = userEmail;                 
+            case "EnterName": // save user name
+                userData.Name = TextInput.text;
+                NextScene(1);
+                break;
+            case "EnterEmail": // save user email
+                userData.Email = TextInput.text;
                 NextScene(1);
                 break;
             case "Exit": // exit from app
@@ -346,16 +350,15 @@ public class Main : MonoBehaviour
                 userSceneDataTime[1]=0f;
                 if (testData.colorTestResult.selected.Count > 6){
                     float s = 0; float e = 0; float[] kArray = new float[] { 8.1f, 6.8f, 6, 5.3f, 4.7f, 4, 3.2f, 1.8f };
-                    for (int i = 0; i < testData.colorTestResult.selected.Count; i++)
-                    {
+                    for (int i = 0; i < testData.colorTestResult.selected.Count; i++){
                         if (i < 3) { if (testData.colorTestResult.selected[i][0] == 0 || testData.colorTestResult.selected[i][0] == 6 || testData.colorTestResult.selected[i][0] == 7) { s += kArray[i]; } }
                         if (i > 4) { if (testData.colorTestResult.selected[i][0] == 1 || testData.colorTestResult.selected[i][0] == 2 || testData.colorTestResult.selected[i][0] == 3 || testData.colorTestResult.selected[i][0] == 4) { s += kArray[7 - i]; } }
                         if (testData.colorTestResult.selected[i][0] == 2 || testData.colorTestResult.selected[i][0] == 3 || testData.colorTestResult.selected[i][0] == 4) { e += kArray[i]; }
                         //Debug.Log("Calculate: i=" +i+" color="+testData.colorTestResult.selected[i][0]+" s=" +s+" e="+e); //
                         //String data = Arrays.toString(testData.colorTestResult.selected);
                     }
-                    testData.colorTestResult.stress = Mathf.RoundToInt(s / 42);
-                    testData.colorTestResult.energy = Mathf.RoundToInt((e - 9) / 12);
+                    testData.colorTestResult.stress = Mathf.RoundToInt(100 * s / 42);
+                    testData.colorTestResult.energy = Mathf.RoundToInt(100 * (e - 9) / 12);
                     testData.colorTestResult.totalTime = Mathf.RoundToInt(userSceneDataTime[0] * 1000);
                     Debug.Log("Color test result= " + JsonUtility.ToJson(testData.colorTestResult));
                     NextScene(1);
@@ -381,13 +384,56 @@ public class Main : MonoBehaviour
                     string notes = (testData.textTestResult.answers.Count + 1).ToString() + "/" + questionsCount.ToString();
                     rootObj = utility.ShowDialog(curQuestion[1], notes, "NextQuestion", Data.getMessage(userLang, "yes"), Data.getMessage(userLang, "not"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
                 } else {
+                    float cnt = Data.getQuestionsCount(userLang) / 2;
+                    float resExtra = (testData.textTestResult.extra - cnt / 2) / cnt;
+                    float resStabil = (testData.textTestResult.stabil - cnt / 2) / cnt;
                     testData.textTestResult.totalTime = Mathf.RoundToInt(userSceneDataTime[0] * 1000);
+                    float a = Mathf.Atan2(resStabil, resExtra);
+                    string[] pTypeName = new string[2];
+                    float[] pTypeValue = new float[2];
+                    float mid = Mathf.PI / 4;
+                    float pi_2 = Mathf.PI / 2;
+                    testData.textTestResult.Power = Mathf.RoundToInt( Mathf.Sqrt(Mathf.Pow(resExtra, 2) + Mathf.Pow(resStabil, 2)));
+                    float mod_a = Mathf.Abs(a);
+                    if (mod_a <= mid) {
+                        pTypeName[0] = "Choleric";
+                        pTypeName[1] = "Sanguine";
+                        pTypeValue[0] = Mathf.Abs(mid + a) / pi_2;
+                        pTypeValue[1] = Mathf.Abs(mid - a) / pi_2;
+                    } else if (mod_a >= 3 * mid){
+                        pTypeName[0] = "Phlegmatic";
+                        pTypeName[1] = "Melancholic";
+                        if (a > 0){
+                            pTypeValue[0] = Mathf.Abs(a - 3 * mid) / pi_2;
+                            pTypeValue[1] = Mathf.Abs(5 * mid - a) / pi_2;
+                        } else {
+                            pTypeValue[0] = Mathf.Abs(-5 * mid - a) / pi_2;
+                            pTypeValue[1] = Mathf.Abs(-3 * mid - a) / pi_2;
+                        }
+                    } else {
+                        if (testData.textTestResult.stabil > 0){
+                            pTypeName[0] = "Choleric";
+                            pTypeName[1] = "Melancholic";
+                            pTypeValue[0] = Mathf.Abs(3 * mid - a) / pi_2;
+                            pTypeValue[1] = Mathf.Abs(mid - a) / pi_2;
+                        } else {
+                            pTypeName[0] = "Phlegmatic";
+                            pTypeName[1] = "Sanguine";
+                            pTypeValue[0] = Mathf.Abs(-mid - a) / pi_2;
+                            pTypeValue[1] = Mathf.Abs(-3 * mid - a) / pi_2;
+                        }
+                    }
+                    Debug.Log("Extra=" + resExtra + " Stabil=" + resStabil + "a=" + a + " str1=" + pTypeName[0] + " " + pTypeValue[0] + " str2=" + pTypeName[1] + " " + pTypeValue[1]);
+                    testData.textTestResult.Name1 = pTypeName[0];
+                    testData.textTestResult.Value1 = Mathf.RoundToInt(100 * pTypeValue[0]);
+                    testData.textTestResult.Name2 = pTypeName[1];
+                    testData.textTestResult.Value2 = Mathf.RoundToInt(100 * pTypeValue[1]);
                     NextScene(1); }
                 break;
             case "Back": NextScene(-1); break;
             case "Repeat":
                 sendDataToServer();
-                curScene = 0;
+                curScene = 3;
                 NextScene(0);
                 break;
             default: Debug.Log("clickSelectEvent not found action for " + name); break;
@@ -476,17 +522,20 @@ public class Main : MonoBehaviour
             case 0: // show a start message
                 rootObj = utility.ShowMessage(Data.getMessage(userLang, "Intro"), "Next", Data.getMessage(userLang, "btnNext"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
                 break;
-            case 1: // show a keyboard for email input
-                rootObj = utility.ShowKeyboard(userLang);
+            case 1: // show a keyboard for name input
+                rootObj = utility.ShowKeyboard(userLang, "Name");
                 break;
-            case 2: // start select a color
+            case 2: // show a keyboard for email input
+                rootObj = utility.ShowKeyboard(userLang, "Email");
+                break;
+            case 3: // start select a color
                 rootObj = colorTest.showColors("selOneCol");
                 string msg = Data.getMessage(userLang, "selOneCol");
                 GameObject msgObj = utility.ShowMessage(msg, "", "", new Vector2(1200, 100), TextAnchor.MiddleCenter, new Vector2(0, 10));
                 msgObj.transform.SetParent(rootObj.transform);
                 msgObj.transform.position = new Vector3(0,4.4f,16);
                 break;
-            case 3: // show a start test message
+            case 4: // show a start test 1 message
                 curTestIndex = 0;
                 string msg1 = string.Format(Data.getMessage(userLang, "Test1"), Data.getMessage(userLang, "color_" + testsConfig[curTestIndex, 0]), Data.getMessage(userLang, "obj_" + testsConfig[curTestIndex, 0]));
                 //Debug.Log("Test1=" + msg1);
@@ -495,13 +544,13 @@ public class Main : MonoBehaviour
                 rootMsg.transform.SetParent(rootObj.transform);
                 utility3D.createTarget(rootObj, testsConfig[0, 1]);
                 break;
-            case 4: // start test
+            case 5: // start test 1
                 curTestIndex = 0;
                 rootObj = utility3D.CreateObjsArray(false);
                 isHintDisplay = true;
                 isDisplayTimer = false;
                 break;
-            case 5: // show a start test message
+            case 6: // show a start test 2 message
                 curTestIndex = 1;
                 rootObj = new GameObject("root");
                 string msg2 = string.Format(Data.getMessage(userLang, "Test2"), Data.getMessage(userLang, "color_" + testsConfig[curTestIndex, 1]), Data.getMessage(userLang, "obj_" + testsConfig[curTestIndex, 0]), testsConfig[curTestIndex, 5]);
@@ -509,7 +558,7 @@ public class Main : MonoBehaviour
                 rootMsg2.transform.SetParent(rootObj.transform);
                 utility3D.createTarget(rootObj, testsConfig[0, 1]);
                 break;
-            case 6: //start test with a time limit
+            case 77: //start test 2 with a time limit
                 curTestIndex = 1;
                 rootObj = utility3D.CreateObjsArray(true);
                 isHintDisplay = true;
@@ -520,6 +569,9 @@ public class Main : MonoBehaviour
                 break;
             case 8: // start color test 
                 testData.colorTestResult.selected.Clear();
+                testData.colorTestResult.energy = 0;
+                testData.colorTestResult.stress = 0;
+                testData.colorTestResult.totalTime = 0;
                 rootObj = colorTest.showColors("selAllCol");
                 GameObject msgObj2 = utility.ShowMessage(Data.getMessage(userLang, "IntroColTest"), "", Data.getMessage(userLang, "btnStart"), new Vector2(1200, 200), TextAnchor.MiddleCenter, new Vector2(0, 20));
                 msgObj2.transform.SetParent(rootObj.transform);
@@ -533,6 +585,11 @@ public class Main : MonoBehaviour
                 testData.textTestResult.extra = 0;
                 testData.textTestResult.stabil = 0;
                 testData.textTestResult.totalTime = 0;
+                testData.textTestResult.Name1 = "";
+                testData.textTestResult.Name2 = "";
+                testData.textTestResult.Value1 = 0;
+                testData.textTestResult.Value2 = 0;
+                testData.textTestResult.Power = 0;
                 questionsCount = Data.getQuestionsCount(userLang);
                 string[] curQuestion = Data.getQuestionIndex(userLang, testData.textTestResult.answers.Count);
                 int.TryParse(curQuestion[0],out curQuestionKey);
@@ -540,10 +597,14 @@ public class Main : MonoBehaviour
                 rootObj = utility.ShowDialog(curQuestion[1], notes, "NextQuestion", Data.getMessage(userLang, "yes"), Data.getMessage(userLang, "not"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
                 break;
             case 11: // show results
-                float cnt = Data.getQuestionsCount(userLang)/2;
-                float resF = (testData.textTestResult.extra - cnt/2)/ cnt;
-                float resH = (testData.textTestResult.stabil - cnt/2) / cnt;
-                rootObj = utility.showResult(userLang, testData.colorTestResult.stress, testData.colorTestResult.energy, resF, resH);
+                //testData.colorTestResult.stress = 30;
+                //testData.colorTestResult.energy = 70;
+                //testData.textTestResult.Name1 = "Phlegmatic";
+                //testData.textTestResult.Name2 =  "Sanguine";
+                //testData.textTestResult.Value1 = 70;
+                //testData.textTestResult.Value2 = 90; 
+                //testData.textTestResult.Power = 50;
+                rootObj = utility.showResult(userLang, testData.colorTestResult.stress, testData.colorTestResult.energy, testData.textTestResult.Name1, testData.textTestResult.Name2, testData.textTestResult.Value1, testData.textTestResult.Value2, testData.textTestResult.Power);
                 break;
             case 12: // show a start text test message
                 rootObj = utility.ShowMessage(Data.getMessage(userLang, "msgAbout"), "Back", Data.getMessage(userLang, "btnBack"), new Vector2(1200, 600), TextAnchor.MiddleCenter, new Vector2(0, 40));
@@ -558,14 +619,7 @@ public class Main : MonoBehaviour
     }
 
     // on the app stop
-    void OnDisable(){
-        //Debug.Log("PrintOnDisable: script was disabled");        
-        sendDataToServer();
-    }
-
-    // on the app start
-    void OnEnable(){ //Debug.Log("PrintOnEnable: script was enabled");
-    }
+    void OnDisable(){ sendDataToServer();}
 
     // send data to server
     private void sendDataToServer(){
@@ -586,21 +640,17 @@ public class Main : MonoBehaviour
     }
 
     private void initTestData(){
-        testData = new TestData()
-        {
+        testData = new TestData(){
             startDateTime = System.DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss"),
-            deviceID = deviceID,
-            lang = userLang,
-            gyro = checkGyro,
-            deviceInfo = deviceDesc,
-            userEmail = userEmail,
-            userZone = userZone,
+            userData = userData,
             snenasMotionData = new List<SnenaMotionData>(),
             rightObjectsList = new List<TestObjects>(),
             selectedObjectsList = new List<TestObjects>(),
             colorTestResult = new ColorTestResult(),
             textTestResult = new TextTestResult()
         };
+        curSnenaMotionData = new SnenaMotionData() { i = 0, act = new List<UserActivity>() };
+        lastAction = new float[14];
     }
 
     // on finish a test

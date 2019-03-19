@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Data {
+    public static string getVersion() {
+        return "0.8";
+    }
 
     private static readonly Dictionary<string, string> connectionData = new Dictionary<string, string>() {
         { "ServerIP", "127.0.0.1" }
@@ -24,7 +27,10 @@ public class Data {
         ,{ "selOneCol", "<b>Выберите самый приятный цвет</b>" }
         ,{ "selAllCol", "<b>Выберите один за одним цвета, которые нравятся больше всего</b>" }
         ,{ "Gyro","Извините\nВаше устройство не имеет гироскопа. " } // Sorry\nYour device has to have a Gyroscope
-        ,{ "Email", "<b>Введите ваш email.</b>\n<size=40>На этот адрес Вам будет отправлена ссылка на окончание теста.</size>" }
+        ,{ "msgEmail", "<b>Введите ваш email.</b>\n<size=40>На этот адрес Вам будет отправлена ссылка на окончание теста.</size>" }
+        ,{ "msgName", "<b>Введите ваше имя.</b>" }
+        ,{ "msgBirth", "<b>Укажите дату вашего рождения.</b>" }
+        ,{ "msgGender", "<b>Укажите ваш пол.</b>" }
         ,{ "Test1", "Найдите все <b>{0} {1}</b> вокруг вас.\n\n<size=40>После выполнения нажмите кнопку <Exit>,\nкоторая расположена внизу.</size>" }
         ,{ "Test_hint", "Найти <b>{0} {1}</b>. Выбрано <b>{2}/{3}</b>" }
         ,{ "Test2", "Найдите все <b>{0} {1}</b> вокруг вас\n\n\nв течение <b>{2}</b> секунд." }
@@ -60,6 +66,7 @@ public class Data {
         ,{"Sanguine","Сангвиник на"}
         ,{"Melancholic","Меланхолик на"}
         ,{"Choleric","Холерик на"}
+        ,{"Power","Стабильность"}
         ,{"btnExit","Выход"}
         ,{"btnAbout","О программе"}        
         ,{"btnRepeat","Повторить"}
@@ -79,21 +86,18 @@ public class Data {
          //,{ " ", "          " },{ "SHIFT", "SHIFT" }
     };
 
-    public static string getMessage(string lang, string key)
-    { string result = "";
+    public static string getMessage(string lang, string key){ string result = "";
         if (Messages[lang].ContainsKey(key)) { result = Messages[lang][key]; }
         return result;
     }
 
-    public static bool isLanguge(string key)
-    {
+    public static bool isLanguge(string key){
         bool result = false;
         if (Messages.ContainsKey(key)) { result = true; }
         return result;
     }
 
-    public static string getKey(string lang, string key)
-    { string result = "";
+    public static string getKey(string lang, string key){ string result = "";
         if (Messages[lang].ContainsKey(key)) { result = KeyList[key]; }
         return result;
     }
@@ -113,8 +117,7 @@ public class Data {
         ["n"] = new List<int>{ 2, 4, 7, 9, 11, 14, 16, 19, 21, 23, 26, 28, 31, 33, 35, 38, 40, 43, 45, 47, 50, 52, 55, 57}
     };
 
-    private static readonly string[][] QuestionsRus = new string[][]
-    {
+    private static readonly string[][] QuestionsRus = new string[][]{
       new string[]{"1","Часто ли Вы чувствуете тягу к новым впечатлениям?"},
       new string[]{"2","Часто ли Вы чувствуете, что нуждаетесь в друзьях, которые могут Вас понять?"},
       new string[]{"3","Считаете ли Вы себя беззаботным человеком?"},

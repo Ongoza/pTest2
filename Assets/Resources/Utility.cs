@@ -20,7 +20,9 @@ public class Utility {
         defaultFont = Font.CreateDynamicFontFromOSFont("Roboto", 1);
         GameObject goDebug = GameObject.Find("txtDebug");
         Texture2D tex = new Texture2D(128, 128);
-        uisprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
+        // uisprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
+        uisprite = Resources.Load<Sprite>("button");
+        //uisprite = AssetDatabase.GetBuiltinExtraResource<Sprite>();
         //matFont = new Material(Shader.Find("UI/Default Font"));
         matFont = new Material(Shader.Find("GoogleVR/UI/Overlay Font"));
         Debug.Log(matFont);
@@ -54,7 +56,7 @@ public class Utility {
         //panelTransform.rotation = Quaternion.AngleAxis(-180, Vector3.up);        
         CreateText(panelTransform, startLoc, size, msg, 50, 0, anchor);
         if (!action.Equals("")) { 
-            CreateButton(panelTransform, "Button", actionLabel, action, "0_10_10", new Vector3(0, 60 - size.y / 2, 0), new Vector2(300, 60));
+            CreateButton(panelTransform, "Button", actionLabel, action, "0_10_10", new Vector3(0, -40 - size.y / 2, 0), new Vector2(300, 60));
         }
         // showTutorialsMenu(rootMenu);
         return rootObj;
@@ -126,7 +128,7 @@ public class Utility {
         br.sizeDelta = size;
         Image img = bt0.AddComponent<Image>();
         img.sprite = uisprite;
-        img.color = new Vector4(0.5f, 0.5f, 0.8f, 1);
+        img.color = new Vector4(0.76f, 0.76f, 0.76f, 1);
         //img.material.color = new Vector4(1f, 1f, 1f, 0.7f);
         img.type = Image.Type.Sliced;
         Button bt = bt0.AddComponent<Button>();
@@ -148,7 +150,7 @@ public class Utility {
     }
 
     // display the email input scena
-    public GameObject ShowKeyboard(string userLang)
+    public GameObject ShowKeyboard(string userLang, string Label)
     { // show keyboard input
         int len = 12; int width = 60; int startPosX = -342; int startPosY = 125; int i = 0; int j = 0;
         GameObject rootObj = CreateCanwas("rootKeyoard", new Vector3(0, -3, 12), new Vector2(770, 350));
@@ -174,7 +176,7 @@ public class Utility {
             imgKey.color = new Vector4(0.5f, 0.5f, 0.8f, 1);
             i++;
         }
-        CreateButton(rootObj.transform, "Enter", Data.getMessage(userLang, "btnNext"), "Enter", "0_10_10", new Vector3(0, -230, 0), new Vector2(150, 60));
+        CreateButton(rootObj.transform, "Enter", Data.getMessage(userLang, "btnNext"), "Enter"+Label, "0_10_10", new Vector3(0, -230, 0), new Vector2(150, 60));
         GameObject InputMsg = new GameObject("InputMsg");
         InputMsg.transform.SetParent(rootObj.transform);
         RectTransform brInputMsg = InputMsg.AddComponent<RectTransform>();
@@ -185,7 +187,7 @@ public class Utility {
         imgInputMsg.sprite = uisprite;
         imgInputMsg.color = new Vector4(0.8f, 0.8f, 0.8f, 1);
         imgInputMsg.type = Image.Type.Sliced;
-        CreateText(brInputMsg, new Vector2(0, 1f), new Vector2(800, 180), Data.getMessage(main.userLang, "Email"), 40, 1, TextAnchor.MiddleCenter);
+        CreateText(brInputMsg, new Vector2(0, 1f), new Vector2(800, 180), Data.getMessage(main.userLang, "msg"+Label), 40, 1, TextAnchor.MiddleCenter);
         GameObject Input = new GameObject("Input");
         Input.transform.SetParent(rootObj.transform);
         RectTransform brInput = Input.AddComponent<RectTransform>();
@@ -197,7 +199,7 @@ public class Utility {
         imgInput.color = new Vector4(0.9f, 0.9f, 0.9f, 1);
         imgInput.type = Image.Type.Sliced;
         GameObject InputText = CreateText(brInput, new Vector2(0, -0.5f), new Vector2(800, 50), "", 40, 1, TextAnchor.MiddleCenter);
-        main.TextEmail = InputText.GetComponent<Text>();
+        main.TextInput = InputText.GetComponent<Text>();
         return rootObj;
     }
 
@@ -226,7 +228,7 @@ public class Utility {
         return rootObj;
     }
 
-    private GameObject progressBar(string name, string label, float value, Vector2 loc, Transform root) {
+    private GameObject progressBar(string name, string label, int value, Vector2 loc, Transform root) {
         GameObject gm = new GameObject(name);
         gm.transform.position = new Vector3(loc.x, loc.y, 0);
         gm.transform.SetParent(root, false);
@@ -234,7 +236,7 @@ public class Utility {
         Texture2D tex2 = new Texture2D(600, 600);
         Sprite sprite = Sprite.Create(tex2, new Rect(0.0f, 0.0f, 600, 100), new Vector2(300f, 300f), 100.0f);
         //Sprite spriteBack = Sprite.Create(tex2, new Rect(0.0f, 0.0f, 600, 100), new Vector2(300f, 300f), 100.0f);
-        string sValue = (Mathf.Round(value * 100)).ToString();
+        string sValue = value.ToString();
         CreateText(gm.transform, new Vector2(750, 10), new Vector2(1000, 70), label+":", 60, 0, TextAnchor.LowerRight);
         // drow background
         GameObject gm1 = new GameObject(name+"_back");
@@ -259,7 +261,7 @@ public class Utility {
         img2.fillMethod = Image.FillMethod.Horizontal;
         img2.type = Image.Type.Filled;
         img2.fillOrigin = (int)Image.OriginHorizontal.Right;
-        img2.fillAmount = value;
+        img2.fillAmount = (float) (value/100f);
         img2.color = new Vector4(0.34f, 0.41f, 0.94f, 1f);
         gm2.GetComponent<RectTransform>().sizeDelta = new Vector2(700, 70);
         //+
@@ -267,61 +269,33 @@ public class Utility {
         return gm;
     }
 
-    public GameObject showResult(string userLang, float resS, float resE, float resF, float resH){
-        Vector2 size = new Vector2(1200, 400);
+    public GameObject showResult(string userLang, int resSt, int resEn, string name1, string name2, int value1, int value2, int value3)
+    {
+        Vector2 size = new Vector2(1200, 500);
         GameObject newCanvas = CreateCanwas("rootMenu", new Vector3(0, main.baseLoc, 12), size);
         GameObject panel = new GameObject("ResultPanel");
         panel.AddComponent<CanvasRenderer>();
         Image img = panel.AddComponent<Image>();
-        img.color = new Vector4(0.3f, 0.3f, 0.7f, 0.3f);
+        img.sprite = uisprite;
+        img.color = new Vector4(0.7f, 0.7f, 0.75f, 0.5f);
         RectTransform panelTransform = panel.GetComponent<RectTransform>();
         panel.transform.SetParent(newCanvas.transform, true);
         panelTransform.localScale = new Vector3(1f, 1f, 1f);
         panelTransform.localRotation = Quaternion.AngleAxis(180, Vector3.up);
         panelTransform.localPosition = new Vector3(0, 0, 0);
-        panelTransform.sizeDelta = new Vector2(1600, 1000);
-        
-        CreateText(panelTransform, new Vector2(0, 300), new Vector2(1400, 70), Data.getMessage(userLang, "Res_C"), 60, 0, TextAnchor.LowerCenter);
-        progressBar("Stress", Data.getMessage(userLang, "Res_C_S"), resS, new Vector2(-150, 200),panelTransform);
-        progressBar("Effi", Data.getMessage(userLang, "Res_C_E"), resE, new Vector2(-150, 100), panelTransform);
+        panelTransform.sizeDelta = new Vector2(1600, 900);        
+        CreateText(panelTransform, new Vector2(0, 340), new Vector2(1400, 70), Data.getMessage(userLang, "Res_C"), 60, 0, TextAnchor.LowerCenter);
+        progressBar("Stress", Data.getMessage(userLang, "Res_C_S"), resSt, new Vector2(-150, 240),panelTransform);
+        progressBar("Effi", Data.getMessage(userLang, "Res_C_E"), resEn, new Vector2(-150, 140), panelTransform);
 
-        CreateText(panelTransform, new Vector2(0, -50), new Vector2(1400, 70), Data.getMessage(userLang, "Res_T"), 60, 0, TextAnchor.LowerCenter);
-        if (resF == 0) { resF = 0.001f; }
-        if (resH == 0) { resH = 0.001f; }
-        float a = Mathf.Atan2(resF,resH);
-        string[] pTypeName = new string[2];
-        float[] pTypeValue = new float[2];
-        float mid = Mathf.PI/4;
+        CreateText(panelTransform, new Vector2(0, 0), new Vector2(1400, 70), Data.getMessage(userLang, "Res_T"), 60, 0, TextAnchor.LowerCenter);    
+        progressBar(name1, Data.getMessage(userLang, name1), value1, new Vector2(-150, -100), panelTransform);
+        progressBar(name2, Data.getMessage(userLang, name2), value2, new Vector2(-150, -200), panelTransform);
+        progressBar("power", Data.getMessage(userLang, "Power"), value3, new Vector2(-150, -300), panelTransform);
 
-        if (resF>0 || a > mid ){
-            pTypeName[0] = "Choleric";
-            pTypeName[1] = "Melancholic";
-            pTypeValue[0] = 0.3f;
-            pTypeValue[1] = 0.3f;
-        }else if(resF<0 || a > mid){
-            pTypeName[0] = "Phlegmatic";
-            pTypeName[1] = "Sanguine";
-            pTypeValue[0] = 0.3f;
-            pTypeValue[1] = 0.3f;
-        }else if (resF>0 || a > mid){
-            pTypeName[0] = "Phlegmatic";
-            pTypeName[1] = "Sanguine";
-            pTypeValue[0] = 0.3f;
-            pTypeValue[1] = 0.3f;
-        }else{
-            pTypeName[0] = "Phlegmatic";
-            pTypeName[1] = "Sanguine";
-            pTypeValue[0] = 0.3f;
-            pTypeValue[1] = 0.3f;
-        }
-        Debug.Log("a="+ a+" str1="+ pTypeName[0] + " " + pTypeValue[0] + " str2=" + pTypeName[1] + " " + pTypeValue[1]);
-        progressBar("f/h", Data.getMessage(userLang, pTypeName[0]), f, new Vector2(-150, -150), panelTransform);
-        progressBar("m/s", Data.getMessage(userLang, pTypeName[1]), h, new Vector2(-150, -250), panelTransform);
-       // progressBar("m/s", "Temperamt Stability", resE, new Vector2(-150, -350), panelTransform);
-
-        CreateButton(panelTransform, "Button0", Data.getMessage(userLang, "btnExit"), "Exit", "0", new Vector3(100-size.x / 2, -40 - size.y, 0), new Vector2(300, 60));
-        CreateButton(panelTransform, "Button1", Data.getMessage(userLang, "btnRepeat"), "Repeat", "0", new Vector3(0, -40 - size.y, 0), new Vector2(300, 60));
-        CreateButton(panelTransform, "Button2", Data.getMessage(userLang, "btnAbout"), "Next", "0", new Vector3(-100 + size.x / 2, -40 - size.y, 0), new Vector2(300, 60));
+        CreateButton(panelTransform, "Button0", Data.getMessage(userLang, "btnExit"), "Exit", "0", new Vector3(100-size.x / 2, 20 - size.y, 0), new Vector2(300, 65));
+        CreateButton(panelTransform, "Button1", Data.getMessage(userLang, "btnRepeat"), "Repeat", "0", new Vector3(0, 20 - size.y, 0), new Vector2(300, 65));
+        CreateButton(panelTransform, "Button2", Data.getMessage(userLang, "btnAbout"), "Next", "0", new Vector3(-100 + size.x / 2, 20 - size.y, 0), new Vector2(300, 65));
 
         return newCanvas;
     }

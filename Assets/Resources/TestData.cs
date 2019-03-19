@@ -14,19 +14,13 @@
 
 [System.Serializable] public class TestData{
     public string startDateTime;
-    public string userZone;
-    public string deviceID; 
-    public string userEmail;
-    public string lang;
-    public string ip;
-    public int gyro;
-    public string ipInfo;
-    public string deviceInfo;
+    public UserData userData;
     public List<TestObjects> rightObjectsList;
     public List<TestObjects> selectedObjectsList;
     public List<SnenaMotionData> snenasMotionData;
     public TextTestResult textTestResult;
     public ColorTestResult colorTestResult;
+
 }
 
 [System.Serializable] public class SnenaMotionData{
@@ -37,6 +31,23 @@
 [System.Serializable] public class UserActivity{
     public int t;
     public int[] a;
+}
+
+[System.Serializable] public class UserData{
+    public string Name;
+    public string Email;
+    public string Birth;
+    public string Gender;
+    public string Input;
+    public string Zone;
+    public string deviceID;
+    public string lang;
+    public string ip;
+    public string txtVersion;
+    public int gyro;
+    public string ipInfo;
+    public string deviceInfo;
+    //public string userID;
 }
 
 [System.Serializable] public class TestObjects{
@@ -65,6 +76,11 @@
     public int extra;
     public int stabil;
     public int totalTime;
+    public string Name1;
+    public string Name2;
+    public int Value1;
+    public int Value2;
+    public int Power;
 }
 
 [System.Serializable] public class ColorTestResult {
