@@ -4,8 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class Utility3D
-{
+public class Utility3D{
     private int nHor = 10;   // Total number of objects for 6 = 16, for 10 =32 
     private float distanceMax = 8f; // min distance from camera to an object
     private float distanceMin = 16.1f; // max distance from camera to an objec  
@@ -33,20 +32,18 @@ public class Utility3D
     private Main main;
     private Utility utility;
 
-    public Utility3D(Main mainScript, Utility mainUtility)
-    {
+    public Utility3D(Main mainScript, Utility mainUtility){
         main = mainScript;
         utility = mainUtility;
         nVer = nHor* 2;
         aStartH = 2 * Mathf.PI / nHor;
         aStartV = 2 * Mathf.PI / nVer;
         aStartR = aStartH / 4f;
-
+        primitivesMaterial = Resources.Load<Material>("mat3D");
     }
 
     // create objects koordinates list around the camera in random locations
-    public GameObject CreateObjsArray(bool isShowTime)
-    {
+    public GameObject CreateObjsArray(bool isShowTime){
         utility.logDebug("CreateObjsArray");
         GameObject rootObj = new GameObject("rootObj");
         rootObj.transform.position = new Vector3(0, main.baseLoc, 0);
@@ -56,21 +53,16 @@ public class Utility3D
         List<Vector3> locations = new List<Vector3>();
         bool pi_0 = true;
         bool pi_2 = true;
-        for (int i = 0; i < nVer / 2; i++)
-        {
+        for (int i = 0; i < nVer / 2; i++){
             float evalution = i * aStartV * 2.0f;
-            if (1.1f < evalution && 1.9f > evalution)
-            { // on the top put only one object
-                if (pi_0)
-                {
+            if (1.1f < evalution && 1.9f > evalution){ // on the top put only one object
+                if (pi_0){
                     pi_0 = false;
                     locations.Add(SphericalToCartesianPlusRandom(Mathf.PI / 2f, evalution));
                 }
             }
-            else if (4.0f < evalution && 5.2f > evalution)
-            { // on the bottom put only one object. This is "Exit" button
-                if (pi_2)
-                {
+            else if (4.0f < evalution && 5.2f > evalution){ // on the bottom put only one object. This is "Exit" button
+                if (pi_2) {
                     pi_2 = false;
                     float a = 10 * Mathf.Cos(evalution);
                     btExitLoc.x = a * Mathf.Cos(Mathf.PI * 1.5f);
@@ -78,11 +70,8 @@ public class Utility3D
                     btExitLoc.z = a * Mathf.Sin(Mathf.PI * 1.5f);
                     //locations.Add(SphericalToCartesianPlusRandom(Mathf.PI * 1.5f, evalution));
                 }
-            }
-            else
-            {
-                for (int j = 0; j < nHor / 2; j++)
-                {
+            } else {
+                for (int j = 0; j < nHor / 2; j++){
                     float polar = j * aStartH;
                     locations.Add(SphericalToCartesianPlusRandom(polar, evalution));
                 }
@@ -91,21 +80,18 @@ public class Utility3D
         int max = locations.Count;
         //create objects for selection by a tested person
         List<int> objectTypes = new List<int>() { 0, 1, 2, 3, 4 };
-        TestObjects rightObjectsList = new TestObjects()
-        {
+        TestObjects rightObjectsList = new TestObjects(){
             i = main.curTestIndex,
             objs = new List<TestObject>()
         };
-        for (int j = 1; j < main.testsConfig[main.curTestIndex, 2] + 1; j++)
-        {
+        for (int j = 1; j < main.testsConfig[main.curTestIndex, 2] + 1; j++){
             int newIndex = Random.Range(0, max);
             string name = j + "_" + main.testsConfig[main.curTestIndex, 0] + "_" + main.testsConfig[main.curTestIndex, 1] + "_0";
             int rot = Random.Range(0, 360);
             //Debug.Log("created right "+name);
             SetUpObj(rootObj,main.testsConfig[main.curTestIndex, 0], name, locations[newIndex], arrColor[main.testsConfig[main.curTestIndex, 1]], rot);
             rightObjectsList.objs.Add(
-                new TestObject()
-                {
+                new TestObject(){
                     i = j,
                     color = main.testsConfig[main.curTestIndex, 1],
                     type = main.testsConfig[main.curTestIndex, 0],
@@ -121,8 +107,7 @@ public class Utility3D
         }
         main.testData.rightObjectsList.Add(rightObjectsList);
         main.testData.selectedObjectsList.Add(
-            new TestObjects()
-            {
+            new TestObjects() {
                 i = main.curTestIndex,
                 timer = main.testsConfig[main.curTestIndex, 5],
                 time = 0,
@@ -133,8 +118,7 @@ public class Utility3D
         //Debug.Log(testData.selectedObjectsList.Count + " testData created =" + JsonUtility.ToJson(testData.selectedObjectsList));
         //create rnadom objects
         int cntObjs = 1;
-        foreach (Vector3 loc in locations)
-        {
+        foreach (Vector3 loc in locations){
             int colIndex = Random.Range(0, 8);
             Color col = arrColor[colIndex];
             int typeObj = objectTypes[Random.Range(0, 4)];
@@ -169,8 +153,7 @@ public class Utility3D
         int height = 20;
         // Add to the hint message a timer informer
         //Debug.Log(testsConfig[main.curTestIndex, 5]);
-        if (isShowTime)
-        {
+        if (isShowTime){
             msg += string.Format(Data.getMessage(main.userLang, "Test_timer"), main.testsConfig[main.curTestIndex, 5]);
             height = 40;
             main.testTime = main.testsConfig[main.curTestIndex, 5];
@@ -188,11 +171,9 @@ public class Utility3D
     }
 
     // Set up 3d paramaters for 3d objects for a test
-    private void SetUpObjParams(GameObject rootObj, GameObject obj, string name, Vector3 loc, Color col, float rot)
-    {
+    private void SetUpObjParams(GameObject rootObj, GameObject obj, string name, Vector3 loc, Color col, float rot){
         //utility.logDebug("SetUpObjParams");
-        if (obj)
-        {
+        if (obj){
             obj.name = name;
             obj.transform.SetParent(rootObj.transform, false);
             obj.transform.position = loc;
@@ -211,25 +192,21 @@ public class Utility3D
         }
     }
 
-        public void createTarget(GameObject root, int colIndex)
-        {
-            GameObject obj = CreatPyramid3();
-            obj.name = "Model";
-            Renderer rend = obj.GetComponent<Renderer>();
-            rend.material = primitivesMaterial;
-            rend.material.color = getColor(colIndex);
-            obj.transform.localScale = new Vector3(0.8f, 0.8f, 0.8f);
-            obj.transform.position = new Vector3(0, 2.7f, 11);
-            obj.transform.Rotate(0, 77, 0);
-            obj.transform.SetParent(root.transform, false);
+    public GameObject createTarget(GameObject root, int colIndex){
+        GameObject obj = CreatPyramid3();
+        obj.name = "Model";
+        Renderer rend = obj.GetComponent<Renderer>();
+        rend.material = primitivesMaterial;
+        rend.material.color = getColor(colIndex);        
+        obj.transform.SetParent(root.transform, true);
+        obj.transform.position = new Vector3(0, 0.3f, 3);
+        return obj;
         }
 
     // create 3d objects for a test 
-    void SetUpObj(GameObject rootObj, int typeObj, string name, Vector3 loc, Color col, float rot)
-    {
+    void SetUpObj(GameObject rootObj, int typeObj, string name, Vector3 loc, Color col, float rot){
         //utility.logDebug("SetUpObj");
-        switch (typeObj)
-        {
+        switch (typeObj){
             case 0: SetUpObjParams(rootObj, GameObject.CreatePrimitive(PrimitiveType.Cube), name, loc, col, rot); break;
             case 1: SetUpObjParams(rootObj, GameObject.CreatePrimitive(PrimitiveType.Sphere), name, loc, col, rot); break;
             case 2: SetUpObjParams(rootObj, GameObject.CreatePrimitive(PrimitiveType.Capsule), name, loc, col, rot); break;
@@ -242,8 +219,7 @@ public class Utility3D
     }
 
     // transform coordinates from Spherical To Cartesian and and some random parameters
-    Vector3 SphericalToCartesianPlusRandom(float polar, float evalution)
-    {
+    Vector3 SphericalToCartesianPlusRandom(float polar, float evalution){
         utility.logDebug("Start");
         Vector3 outCart;
         float distanceR = Random.Range(distanceMin, distanceMax);
@@ -256,8 +232,7 @@ public class Utility3D
         return outCart;
     }
 
-    public GameObject CreatPyramid3()
-    {
+    public GameObject CreatPyramid3(){
         Mesh mesh = new Mesh();
         Vector3 p0 = new Vector3(0, 0, 0);
         Vector3 p1 = new Vector3(1, 0, 0);
@@ -275,8 +250,7 @@ public class Utility3D
         return obj;
     }
 
-    void CreatPyramid4()
-    {
+    void CreatPyramid4(){
         Mesh mesh = new Mesh();
         mesh.Clear();
         Vector3 p0 = new Vector3(1, 1, 0); //front right top
@@ -300,8 +274,7 @@ public class Utility3D
         mF.sharedMesh = mesh;
     }
 
-    public GameObject CreateObjsMenu(int colIndex)
-    {
+    public GameObject CreateObjsMenu(int colIndex){
         GameObject rootObj = new GameObject("rootObj");
         Color col = arrColor[colIndex];
         SetUpObjParams(rootObj, GameObject.CreatePrimitive(PrimitiveType.Cube), "0", new Vector3(-5,0,16), col, 35);
@@ -313,4 +286,29 @@ public class Utility3D
     }
 
     public Color getColor(int i){return arrColor[i];}
+
+    public IEnumerator appearObject(GameObject gm, bool appear){
+        if (gm) {
+            Renderer rend = gm.GetComponent<Renderer>();
+            float step = 0.01f;
+            float progress = 0;
+            float startTransparent = 0f;
+            float endTransparent = 1f;
+            if (!appear){
+                startTransparent = 1f;
+                endTransparent = 0f;
+            }
+            Color color = rend.material.color;
+            Color colorStart = new Color(color.r, color.g, color.b, startTransparent);            
+            Color colorEnd = new Color(colorStart.r, colorStart.g, colorStart.b, endTransparent);
+            rend.material.color = colorStart;
+            while (progress <= 1){   
+                Debug.Log("3d progress="+progress);
+                rend.material.color = Color.Lerp(colorStart, colorEnd, progress);
+                progress += step;
+                yield return null;
+            }
+            Debug.Log("3d Animation is completed");
+        } else{ Debug.Log("3d Animation GM not found");}
+    }
 }

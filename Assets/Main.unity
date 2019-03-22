@@ -534,12 +534,12 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1396359514}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 708705254, guid: f70555f144d8491a825f0804e09c671c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 2100000, guid: 3067e7b8a504a324780179b0796a569b, type: 2}
   m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
   m_RaycastTarget: 0
   m_OnCullStateChanged:
@@ -548,7 +548,7 @@ MonoBehaviour:
     m_TypeName: UnityEngine.UI.MaskableGraphic+CullStateChangedEvent, UnityEngine.UI,
       Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
   m_FontData:
-    m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
+    m_Font: {fileID: 12800000, guid: 4eedafad5084240419e649245c7b2093, type: 3}
     m_FontSize: 10
     m_FontStyle: 0
     m_BestFit: 0
@@ -560,7 +560,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: 
+  m_Text: test
 --- !u!222 &1396359517
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -615,18 +615,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   precisionDec: 100
   baseLoc: 2
-  TextEmail: {fileID: 0}
+  camFade: {fileID: 0}
   userLang: Russian
+  TextInput: {fileID: 0}
+  SceneEventSystem: {fileID: 0}
   testData:
     startDateTime: 
-    userZone: 
-    deviceID: 
-    userEmail: 
-    lang: 
-    ip: 
-    gyro: 0
-    ipInfo: 
-    deviceInfo: 
+    userData:
+      Name: 
+      Email: 
+      Birth: 
+      Gender: 
+      Input: 
+      Zone: 
+      deviceID: 
+      lang: 
+      ip: 
+      txtVersion: 
+      gyro: 0
+      ipInfo: 
+      deviceInfo: 
     rightObjectsList: []
     selectedObjectsList: []
     snenasMotionData: []
@@ -634,6 +642,11 @@ MonoBehaviour:
       extra: 0
       stabil: 0
       totalTime: 0
+      Name1: 
+      Name2: 
+      Value1: 0
+      Value2: 0
+      Power: 0
     colorTestResult:
       energy: 0
       stress: 0

@@ -12,40 +12,48 @@ public class Utility {
     private Text TextDebug; // Debug object
     private Main main;
     private Material matFont;
-
-    public Utility(Main mainScript, bool isVRLog) {
+    private float stepAnimation; // animation step
+    
+    // constractor
+    public Utility(Main mainScript, bool isVRLog, float step) {
         main = mainScript;
+        stepAnimation = step;
         isDebug = isVRLog;
-        Debug.Log("VR Debug is "+ isDebug);
-        defaultFont = Font.CreateDynamicFontFromOSFont("Roboto", 1);
         GameObject goDebug = GameObject.Find("txtDebug");
+        if (isDebug){
+            if (goDebug) {
+                TextDebug = goDebug.GetComponent<Text>();
+                TextDebug.enabled = true;
+            }
+            else { Debug.Log("Can't find a debug obj");}
+        } else{ Debug.Log("VR Debug off");}
+        Debug.Log("VR Debug is ="+ isDebug+" ="+ isVRLog);
+        logDebug("Utility init");
+        try { 
+            defaultFont = Font.CreateDynamicFontFromOSFont("Roboto", 1);       
+            logDebug("Utility init 2");
+        }catch (System.Exception e){Debug.Log("Can not load font");}
         Texture2D tex = new Texture2D(128, 128);
         // uisprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
-        uisprite = Resources.Load<Sprite>("button");
-        //uisprite = AssetDatabase.GetBuiltinExtraResource<Sprite>();
-        //matFont = new Material(Shader.Find("UI/Default Font"));
-        matFont = new Material(Shader.Find("GoogleVR/UI/Overlay Font"));
-        Debug.Log(matFont);
-        if (isDebug) {            
-            if (goDebug) { TextDebug = goDebug.GetComponent<Text>(); }
-            else {
-                Debug.Log("Can't find a debug obj");
-            }
-        }
-        else
-        {
-            Debug.Log("VR Debug off");
-        }
-        }
+        try{ uisprite = Resources.Load<Sprite>("button");
+        }catch (System.Exception e){Debug.Log("Can not load sprite for button");}
+        logDebug("Utility init 3");
+        try{ matFont = Resources.Load<Material>("matOver");
+        }catch (System.Exception e){Debug.Log("Can not load mterial for font");}
+        logDebug("Utility init 5");
 
-    public GameObject ShowMessage(string msg, string action, string actionLabel, Vector2 size, TextAnchor anchor, Vector2 startLoc)
-    {
+        //Debug.Log(matFont);
+
+    }
+
+    // message dialog
+    public GameObject ShowMessage(string msg, string action, string actionLabel, Vector2 size, TextAnchor anchor, Vector2 startLoc){
         //logDebug("ShowMessage");
         GameObject rootObj = CreateCanwas("rootMenu", new Vector3(0, main.baseLoc, 12), size);
         GameObject panel = new GameObject("Panel");
         panel.AddComponent<CanvasRenderer>();
         Image i = panel.AddComponent<Image>();
-        i.color = new Vector4(1, 1, 1, 0.7f);
+        i.color = new Vector4(1, 1, 1, 0.9f);
         i.sprite = uisprite;
         i.type = Image.Type.Sliced;
         RectTransform panelTransform = panel.GetComponent<RectTransform>();
@@ -62,40 +70,29 @@ public class Utility {
         return rootObj;
     }
 
-    // create canavas for text messages
-    public GameObject CreateCanwas(string name, Vector3 loc, Vector2 size)
-    {
+    // canavas for text messages
+    public GameObject CreateCanwas(string name, Vector3 loc, Vector2 size){
         //logDebug("CreateCanwas");
         GameObject objCanvas = new GameObject(name);
         Canvas c = objCanvas.AddComponent<Canvas>();
         c.renderMode = RenderMode.WorldSpace;
         objCanvas.AddComponent<CanvasScaler>();
         RectTransform NewCanvasRect = objCanvas.GetComponent<RectTransform>();
-        objCanvas.AddComponent<GvrPointerGraphicRaycaster>();
+        GvrPointerGraphicRaycaster action = objCanvas.AddComponent<GvrPointerGraphicRaycaster>();
+        //action.enabled = false;
         NewCanvasRect.localPosition = loc;
         NewCanvasRect.sizeDelta = size;
         NewCanvasRect.localScale = new Vector3(0.014f, 0.014f, 1f);
         return objCanvas;
     }
 
-    public void logDebug(string msg)
-    {
-        if (isDebug)
-        {
-            if (TextDebug)
-            {
-                TextDebug.text += msg + "=>";
-            }
-        }
-        else
-        {
-            Debug.Log(msg);
-        }
+    public void logDebug(string msg){
+        if (isDebug){ if (TextDebug){ TextDebug.text += msg + "=>";}
+        }else{Debug.Log(msg);}
     }
 
-    // create text object
-    public GameObject CreateText(Transform parent, Vector2 loc, Vector2 size, string message, int fontSize, int fontStyle, TextAnchor achor)
-    {
+    // text object
+    public GameObject CreateText(Transform parent, Vector2 loc, Vector2 size, string message, int fontSize, int fontStyle, TextAnchor achor){
         //logDebug("CreateText");
         GameObject textObject = new GameObject("Text");
         textObject.transform.SetParent(parent);
@@ -119,9 +116,8 @@ public class Utility {
         return textObject;
     }
 
-    //create button object
-    public GameObject CreateButton(Transform parent, string name, string label, string action1, string action2, Vector3 loc, Vector2 size)
-    {
+    // button object
+    public GameObject CreateButton(Transform parent, string name, string label, string action1, string action2, Vector3 loc, Vector2 size){
         //logDebug("CreateButton 1");
         GameObject bt0 = new GameObject(name);
         RectTransform br = bt0.AddComponent<RectTransform>();
@@ -149,15 +145,14 @@ public class Utility {
         return bt0;
     }
 
-    // display the email input scena
-    public GameObject ShowKeyboard(string userLang, string Label)
-    { // show keyboard input
+    //  a text input dialog
+    public GameObject ShowKeyboard(string userLang, string Label){ // show keyboard input
         int len = 12; int width = 60; int startPosX = -342; int startPosY = 125; int i = 0; int j = 0;
         GameObject rootObj = CreateCanwas("rootKeyoard", new Vector3(0, -3, 12), new Vector2(770, 350));
         GameObject panel = new GameObject("Panel");
         panel.AddComponent<CanvasRenderer>();
         Image img = panel.AddComponent<Image>();
-        img.color = new Vector4(1, 1, 1, 0.7f);
+        img.color = new Vector4(1, 1, 1, 1f);
         img.sprite = uisprite;
         img.type = Image.Type.Sliced;
         RectTransform panelTransform = panel.GetComponent<RectTransform>();
@@ -166,8 +161,7 @@ public class Utility {
         panelTransform.localPosition = new Vector3(0, 0, 0);
         panelTransform.sizeDelta = new Vector2(770, 330);
         Dictionary<string, string> keyDictionary = Data.getKeys();
-        foreach (KeyValuePair<string, string> item in keyDictionary)
-        {
+        foreach (KeyValuePair<string, string> item in keyDictionary){
             float delta = 0;
             if (item.Key.Length > 1) { width = 60 * 2; i += 1; delta = 30; }
             if (i >= len) { j++; i = 0; }
@@ -203,14 +197,14 @@ public class Utility {
         return rootObj;
     }
 
-    public GameObject ShowDialog(string msg, string notes, string action, string actionLabel0, string actionLabel1, Vector2 size, TextAnchor anchor, Vector2 startLoc)
-    {
+    // select dialog object
+    public GameObject ShowDialog(string msg, string notes, string action, string actionLabel0, string actionLabel1, Vector2 size, TextAnchor anchor, Vector2 startLoc){
         //logDebug("ShowMessage");
         GameObject rootObj = CreateCanwas("rootMenu", new Vector3(0, main.baseLoc, 12), size);
         GameObject panel = new GameObject("Panel");
         panel.AddComponent<CanvasRenderer>();
         Image i = panel.AddComponent<Image>();
-        i.color = new Vector4(1, 1, 1, 0.7f);
+        i.color = new Vector4(1, 1, 1, 0.9f);
         i.sprite = uisprite;
         i.type = Image.Type.Sliced;
         RectTransform panelTransform = panel.GetComponent<RectTransform>();
@@ -228,6 +222,7 @@ public class Utility {
         return rootObj;
     }
 
+    // porgressbar object
     private GameObject progressBar(string name, string label, int value, Vector2 loc, Transform root) {
         GameObject gm = new GameObject(name);
         gm.transform.position = new Vector3(loc.x, loc.y, 0);
@@ -269,8 +264,8 @@ public class Utility {
         return gm;
     }
 
-    public GameObject showResult(string userLang, int resSt, int resEn, string name1, string name2, int value1, int value2, int value3)
-    {
+    // results panel object
+    public GameObject showResult(string userLang, int resSt, int resEn, string name1, string name2, int value1, int value2, int value3){
         Vector2 size = new Vector2(1200, 500);
         GameObject newCanvas = CreateCanwas("rootMenu", new Vector3(0, main.baseLoc, 12), size);
         GameObject panel = new GameObject("ResultPanel");
@@ -299,5 +294,112 @@ public class Utility {
 
         return newCanvas;
     }
+
+    public IEnumerator PauseInit(float timer, int scene){
+        float currCountdownValue = timer;
+        while (currCountdownValue > 0){
+            //Debug.Log("Countdown: " + currCountdownValue);
+            yield return new WaitForSeconds(1.0f);
+            currCountdownValue--;
+        }
+        main.NextScene(scene);
+    }
+
+    // a fade transition between scenas
+    public IEnumerator FadeScene(float duration, bool startNewScene, Color color, string sceneName){
+        //utility.logDebug("FadeScene");
+        if (main.camFade) {
+            //GameObject camFade = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            main.camFade.GetComponent<Renderer>().enabled = true;
+            //Debug.Log("Start fade scene " + color);
+            float startTransparent = 0f;
+            float endTransparent = 1f;
+            float smoothness = 0.05f;
+            float progress = 0;
+            float increment = smoothness / duration; //The amount of change to apply.
+            if (startNewScene == true){
+                startTransparent = 1f;
+                endTransparent = 0f;
+            }
+            Color colorStart = new Color(color.r, color.g, color.b, startTransparent);
+            main.camFade.GetComponent<Renderer>().materials[0].color = colorStart;
+            Color colorEnd = new Color(colorStart.r, colorStart.g, colorStart.b, endTransparent);
+            while (progress < 1){
+                progress += increment;
+                //Debug.Log(progress);
+                main.camFade.GetComponent<Renderer>().materials[0].color = Color.Lerp(colorStart, colorEnd, progress);
+                yield return new WaitForSeconds(smoothness);
+            }
+            yield return null;
+            if (startNewScene == true){
+                Debug.Log("Start scene " + sceneName + " tr=" + startNewScene);
+                main.camFade.GetComponent<Renderer>().enabled = false;
+                if (main.SceneEventSystem) { main.SceneEventSystem.enabled = true; }
+            } else { Debug.Log("Start scene " + sceneName + " tr=" + startNewScene);}
+        } else { Debug.Log("Can not find camFade object"); }
+    }
+
+    // a rotate transition between scenas
+    public IEnumerator RotateCamera(float duration, float speedUp, string newAction) {
+        Transform camTransform = Camera.main.transform;
+        float progress = 300;
+        float smooth = 0.0001f;
+        if (speedUp < 0) { smooth = 0.05f; }
+        float angleDelta = 1f;
+        float newAngle = 0f;
+        while (progress > 0 && smooth > 0) {
+            progress--;
+            // smooth = Mathf.Lerp(smooth, speedMax, smooth);
+            smooth += speedUp;
+            newAngle += angleDelta;
+            Quaternion target = Quaternion.Euler(newAngle, newAngle, newAngle);
+            //Debug.Log(progress + " " + smooth);            
+            //transform.rotation = Quaternion.Slerp(transform.rotation, target, smooth);
+            yield return null;
+        }
+        Debug.Log("Start new action " + newAction);
+        // StartAction(speedUp);
+    }
+
+    public IEnumerator FadeTo(GameObject obj){
+        if (obj){
+            enableAction(obj,false);
+            float smoothness = 0.05f; float duration = 1f;
+            Color colorStart = obj.GetComponent<Image>().color;
+            Color colorEnd = new Color(colorStart.r, colorStart.g, colorStart.b, 0);
+            float progress = 0; float increment = smoothness / duration; //The amount of change to apply.
+            while (progress < 1){
+                progress += increment;
+                if (obj) {
+                    obj.GetComponent<Image>().color = Color.Lerp(colorStart, colorEnd, progress);
+                    yield return new WaitForSeconds(smoothness);
+                } else { break; }
+            };
+            main.destroy(obj);
+        }
+        yield return null;
+    }
+
+    public IEnumerator rotateText(GameObject gm, bool appear, string nextAnimation, int index){
+        enableAction(gm, false);
+        Debug.Log("start animation for "+gm.name);
+        float step = stepAnimation;
+        float currCountdownValue = 100f;
+        Transform transform = gm.transform;        
+        if (appear) { step = -step; transform.Rotate(Vector3.left, currCountdownValue); }        
+        while (currCountdownValue > 0){
+            transform.Rotate(Vector3.left, step);
+            currCountdownValue-=Mathf.Abs(step);
+            yield return null;            
+        }
+        enableAction(gm, true);
+        if (nextAnimation != "") { main.startNewAnimation(nextAnimation,index); }
+        Debug.Log("Animation is completed");
+    }
+
+    public void enableAction(GameObject obj, bool act) {
+        if (obj) {
+            GvrPointerGraphicRaycaster action = obj.GetComponent<GvrPointerGraphicRaycaster>();
+            if (action) { action.enabled = act; }}}
 
 }
