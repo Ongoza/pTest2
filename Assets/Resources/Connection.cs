@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Text;
 using System.Net;
-using Facebook.Unity;
+//using Facebook.Unity;
 using System.Collections.Generic;
 
 public class Connection{
@@ -85,20 +85,20 @@ public class Connection{
         }
     }
 
-    private void AuthCallback(ILoginResult result){
-        try { Debug.Log("VRPT=AuthCallback "+JsonUtility.ToJson(result));
-        if (FB.IsLoggedIn){
-            var aToken = Facebook.Unity.AccessToken.CurrentAccessToken;
-            Debug.Log("VRPT=" + JsonUtility.ToJson(aToken));
-        } else { Debug.Log("VRPT=User cancelled login");}
-       } catch (System.Exception e) { Debug.Log(e); }
-    }
+    //private void AuthCallback(ILoginResult result){
+    //    try { Debug.Log("VRPT=AuthCallback "+JsonUtility.ToJson(result));
+    //    if (FB.IsLoggedIn){
+    //        var aToken = Facebook.Unity.AccessToken.CurrentAccessToken;
+    //        Debug.Log("VRPT=" + JsonUtility.ToJson(aToken));
+    //    } else { Debug.Log("VRPT=User cancelled login");}
+    //   } catch (System.Exception e) { Debug.Log(e); }
+    //}
 
-    private void InitCallback(){
-        if (FB.IsInitialized) {
-            FB.ActivateApp();
-            FB.LogInWithReadPermissions(perms, AuthCallback);
-        } else { Debug.Log("VRPT=Failed to Initialize the Facebook SDK");}
-    }
+    //private void InitCallback(){
+    //    if (FB.IsInitialized) {
+    //        FB.ActivateApp();
+    //        FB.LogInWithReadPermissions(perms, AuthCallback);
+    //    } else { Debug.Log("VRPT=Failed to Initialize the Facebook SDK");}
+    //}
 
 }

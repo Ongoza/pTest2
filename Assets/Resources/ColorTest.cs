@@ -22,14 +22,12 @@ public class ColorTest
     private Main main;
     //private Utility utility;
 
-    public ColorTest(Main mainScript, Utility mainUtility)
-    {
+    public ColorTest(Main mainScript, Utility mainUtility){
         main = mainScript;
        // utility = mainUtility;
     }
 
-    public GameObject showColors(string btType)
-    {
+    public GameObject showColors(string btType){
         //selObj = new selColors ();       
         selectedColor = -1;
         //quad1.transform.rotation = Quaternion.Euler(0, 180, 45);
@@ -45,8 +43,7 @@ public class ColorTest
         return root;
     }
 
-    private void createArrays()
-    {
+    private void createArrays(){
         // {"gray","blue","green","red","yellow","purple","brown","black" };
         arrColor[0] = new float[] { 171, 171, 171 };
         arrColor[1] = new float[] { 0, 0, 128 };
@@ -58,11 +55,9 @@ public class ColorTest
         arrColor[7] = new float[] { 0, 0, 0 };
         float[] xLoc = { -3f, -1f, 1f, 3f };
         float[] yLoc = { 1f, -1f };
-        for (int i = 0; i < 2; i++)
-        {
+        for (int i = 0; i < 2; i++){
             int h = 4;
-            for (int j = 0; j < h; j++)
-            {
+            for (int j = 0; j < h; j++){
                 int k = i * h + j;
                 arrLoc[k] = new float[] { xLoc[j], yLoc[i] };
             }
@@ -70,8 +65,7 @@ public class ColorTest
     }
 
 
-    private void createBaseObjs(string btType)
-    {
+    private void createBaseObjs(string btType){
         //Debug.Log("start create cards 2");
         GameObject newCanvas = new GameObject("Canvas");       
         Canvas c = newCanvas.AddComponent<Canvas>();
@@ -83,15 +77,13 @@ public class ColorTest
         NewCanvasRect.sizeDelta = new Vector2(120, 70);       
         NewCanvasRect.transform.localScale = new Vector3(0.025f, 0.025f, 1);
         newCanvas.transform.SetParent(root.transform,false);
-        for (int i = 0; i < 8; i++)
-        {
+        for (int i = 0; i < 8; i++){
             listCards[i] = createCard2(i, NewCanvasRect, new Color(arrColor[i][0] / 255f, arrColor[i][1] / 255f, arrColor[i][2] / 255f, 1f), btType);
             listCards[i].transform.Translate(arrLoc[i][0] * 2, arrLoc[i][1] * 2, 0);
         }
     }
 
-    private GameObject createCard2(int i, RectTransform root, Color color, string btType)
-    {
+    private GameObject createCard2(int i, RectTransform root, Color color, string btType){
         GameObject button = new GameObject("b_" + i);
         Image img = button.AddComponent<Image>();
         //RawImage img = button.AddComponent<RawImage>();
@@ -113,5 +105,23 @@ public class ColorTest
         be.triggers.Add(entryExitGaze);
         return button;
     }
-
+    public IEnumerator FadeTo(GameObject obj){
+        if (obj){
+            EventTrigger et = obj.GetComponent<EventTrigger>();
+            if (et) { obj.GetComponent<EventTrigger>().enabled = false; }
+            float smoothness = 0.05f; float duration = 1f;
+            Color colorStart = obj.GetComponent<Image>().color;
+            Color colorEnd = new Color(colorStart.r, colorStart.g, colorStart.b, 0);
+            float progress = 0; float increment = smoothness / duration; //The amount of change to apply.
+            while (progress < 1){
+                progress += increment;
+                if (obj){
+                    obj.GetComponent<Image>().color = Color.Lerp(colorStart, colorEnd, progress);
+                    yield return null;
+                }
+                else { yield break; }
+            };
+            main.destroy(obj);
+        }
+    }
 }

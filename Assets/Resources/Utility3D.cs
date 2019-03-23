@@ -40,6 +40,7 @@ public class Utility3D{
         aStartV = 2 * Mathf.PI / nVer;
         aStartR = aStartH / 4f;
         primitivesMaterial = Resources.Load<Material>("mat3D");
+
     }
 
     // create objects koordinates list around the camera in random locations
@@ -128,7 +129,7 @@ public class Utility3D{
             SetUpObj(rootObj,typeObj, objName, loc, col, Random.Range(0, 360));
         }
         //Create "Exit" button       
-        GameObject canExit = utility.CreateCanwas("rootMenu", btExitLoc, new Vector2(100, 50));
+        GameObject canExit = utility.CreateCanvas("rootMenu", btExitLoc, new Vector2(100, 50));
         canExit.transform.SetParent(rootObj.transform);
         utility.CreateButton(canExit.transform, "btExit", "Exit", "Next", "0_10_10", new Vector3(0, 0, 0), new Vector2(100, 50));
         canExit.transform.Rotate(Vector3.left, -60);
@@ -149,12 +150,12 @@ public class Utility3D{
         img.sprite = utility.uisprite;
         img.type = Image.Type.Sliced;
         img.color = new Vector4(1f, 1f, 1f, 1f);
-        string msg = string.Format(Data.getMessage(main.userLang, "Test_hint"), Data.getMessage(main.userLang, "color_" + main.testsConfig[main.curTestIndex, 1]), Data.getMessage(main.userLang, "obj_" + main.testsConfig[main.curTestIndex, 0]), 0, main.testsConfig[main.curTestIndex, 2]);
+        string msg = string.Format(Data.getMessage(main.getLng(), "Test_hint"), Data.getMessage(main.getLng(), "color_" + main.testsConfig[main.curTestIndex, 1]), Data.getMessage(main.getLng(), "obj_" + main.testsConfig[main.curTestIndex, 0]), 0, main.testsConfig[main.curTestIndex, 2]);
         int height = 20;
         // Add to the hint message a timer informer
         //Debug.Log(testsConfig[main.curTestIndex, 5]);
         if (isShowTime){
-            msg += string.Format(Data.getMessage(main.userLang, "Test_timer"), main.testsConfig[main.curTestIndex, 5]);
+            msg += string.Format(Data.getMessage(main.getLng(), "Test_timer"), main.testsConfig[main.curTestIndex, 5]);
             height = 40;
             main.testTime = main.testsConfig[main.curTestIndex, 5];
         }
@@ -295,6 +296,8 @@ public class Utility3D{
             float startTransparent = 0f;
             float endTransparent = 1f;
             if (!appear){
+                EventTrigger et = gm.GetComponent<EventTrigger>();
+                if (et) { gm.GetComponent<EventTrigger>().enabled = false; }
                 startTransparent = 1f;
                 endTransparent = 0f;
             }
@@ -304,11 +307,14 @@ public class Utility3D{
             rend.material.color = colorStart;
             while (progress <= 1){   
                 Debug.Log("3d progress="+progress);
-                rend.material.color = Color.Lerp(colorStart, colorEnd, progress);
-                progress += step;
-                yield return null;
+                if (gm){
+                    rend.material.color = Color.Lerp(colorStart, colorEnd, progress);
+                    progress += step;
+                    yield return null;
+                } else { yield break; }
             }
             Debug.Log("3d Animation is completed");
+            if(!appear) { main.destroy(gm);}
         } else{ Debug.Log("3d Animation GM not found");}
     }
 }

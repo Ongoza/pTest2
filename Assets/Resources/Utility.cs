@@ -12,12 +12,11 @@ public class Utility {
     private Text TextDebug; // Debug object
     private Main main;
     private Material matFont;
-    private float stepAnimation; // animation step
+    //private float stepAnimation; // animation step
     
     // constractor
-    public Utility(Main mainScript, bool isVRLog, float step) {
+    public Utility(Main mainScript, bool isVRLog) {
         main = mainScript;
-        stepAnimation = step;
         isDebug = isVRLog;
         GameObject goDebug = GameObject.Find("txtDebug");
         if (isDebug){
@@ -49,7 +48,10 @@ public class Utility {
     // message dialog
     public GameObject ShowMessage(string msg, string action, string actionLabel, Vector2 size, TextAnchor anchor, Vector2 startLoc){
         //logDebug("ShowMessage");
-        GameObject rootObj = CreateCanwas("rootMenu", new Vector3(0, main.baseLoc, 12), size);
+        GameObject rootObj = new GameObject("rootObj");
+        rootObj.transform.position = new Vector3(0,main.baseLoc,12);
+        GameObject rootCanvas = CreateCanvas("rootMenu", new Vector3(0, 0, 0), size);
+        rootCanvas.transform.SetParent(rootObj.transform,false);
         GameObject panel = new GameObject("Panel");
         panel.AddComponent<CanvasRenderer>();
         Image i = panel.AddComponent<Image>();
@@ -57,12 +59,12 @@ public class Utility {
         i.sprite = uisprite;
         i.type = Image.Type.Sliced;
         RectTransform panelTransform = panel.GetComponent<RectTransform>();
-        panel.transform.SetParent(rootObj.transform, true);
+        panel.transform.SetParent(rootCanvas.transform, true);
         panelTransform.localScale = new Vector3(1f, 1f, 1f);
         panelTransform.localPosition = new Vector3(0, 40, 0);
         panelTransform.sizeDelta = size;
         //panelTransform.rotation = Quaternion.AngleAxis(-180, Vector3.up);        
-        CreateText(panelTransform, startLoc, size, msg, 50, 0, anchor);
+        CreateText(panelTransform, startLoc, new Vector2(size.x - 150, size.y), msg, 50, 0, anchor);
         if (!action.Equals("")) { 
             CreateButton(panelTransform, "Button", actionLabel, action, "0_10_10", new Vector3(0, -40 - size.y / 2, 0), new Vector2(300, 60));
         }
@@ -71,8 +73,8 @@ public class Utility {
     }
 
     // canavas for text messages
-    public GameObject CreateCanwas(string name, Vector3 loc, Vector2 size){
-        //logDebug("CreateCanwas");
+    public GameObject CreateCanvas(string name, Vector3 loc, Vector2 size){
+        //logDebug("CreateCanvas");
         GameObject objCanvas = new GameObject(name);
         Canvas c = objCanvas.AddComponent<Canvas>();
         c.renderMode = RenderMode.WorldSpace;
@@ -148,7 +150,7 @@ public class Utility {
     //  a text input dialog
     public GameObject ShowKeyboard(string userLang, string Label){ // show keyboard input
         int len = 12; int width = 60; int startPosX = -342; int startPosY = 125; int i = 0; int j = 0;
-        GameObject rootObj = CreateCanwas("rootKeyoard", new Vector3(0, -3, 12), new Vector2(770, 350));
+        GameObject rootObj = CreateCanvas("rootKeyoard", new Vector3(0, -3, 12), new Vector2(770, 350));
         GameObject panel = new GameObject("Panel");
         panel.AddComponent<CanvasRenderer>();
         Image img = panel.AddComponent<Image>();
@@ -181,7 +183,7 @@ public class Utility {
         imgInputMsg.sprite = uisprite;
         imgInputMsg.color = new Vector4(0.8f, 0.8f, 0.8f, 1);
         imgInputMsg.type = Image.Type.Sliced;
-        CreateText(brInputMsg, new Vector2(0, 1f), new Vector2(800, 180), Data.getMessage(main.userLang, "msg"+Label), 40, 1, TextAnchor.MiddleCenter);
+        CreateText(brInputMsg, new Vector2(0, 1f), new Vector2(800, 180), Data.getMessage(main.getLng(), "msg"+Label), 40, 1, TextAnchor.MiddleCenter);
         GameObject Input = new GameObject("Input");
         Input.transform.SetParent(rootObj.transform);
         RectTransform brInput = Input.AddComponent<RectTransform>();
@@ -200,7 +202,10 @@ public class Utility {
     // select dialog object
     public GameObject ShowDialog(string msg, string notes, string action, string actionLabel0, string actionLabel1, Vector2 size, TextAnchor anchor, Vector2 startLoc){
         //logDebug("ShowMessage");
-        GameObject rootObj = CreateCanwas("rootMenu", new Vector3(0, main.baseLoc, 12), size);
+        GameObject rootObj = new GameObject("rootObj");
+        rootObj.transform.position = new Vector3(0, main.baseLoc, 12);
+        GameObject rootCanvas = CreateCanvas("rootMenu", new Vector3(0, 0, 0), size);
+        rootCanvas.transform.SetParent(rootObj.transform, false);
         GameObject panel = new GameObject("Panel");
         panel.AddComponent<CanvasRenderer>();
         Image i = panel.AddComponent<Image>();
@@ -208,15 +213,15 @@ public class Utility {
         i.sprite = uisprite;
         i.type = Image.Type.Sliced;
         RectTransform panelTransform = panel.GetComponent<RectTransform>();
-        panel.transform.SetParent(rootObj.transform, true);
+        panel.transform.SetParent(rootCanvas.transform, true);
         panelTransform.localScale = new Vector3(1f, 1f, 1f);
         panelTransform.localPosition = new Vector3(0, 40, 0);
         panelTransform.sizeDelta = size;
         //panelTransform.rotation = Quaternion.AngleAxis(-180, Vector3.up);        
-        CreateText(panelTransform, startLoc, size, msg, 50, 0, anchor);
-        if(!notes.Equals("")){CreateText(panelTransform, new Vector2(size.x*0.4f, size.y*0.4f), new Vector2(size.x/4,100), notes, 40, 0, anchor);}
-        CreateButton(panelTransform, "Button0", actionLabel0, action, "0", new Vector3(-size.x / 5, 60 - size.y / 2, 0), new Vector2(300, 60));
-        CreateButton(panelTransform, "Button1", actionLabel1, action, "1", new Vector3(size.x / 5, 60 - size.y / 2, 0), new Vector2(300, 60));
+        CreateText(panelTransform, startLoc, new Vector2(size.x - 150, size.y), msg, 50, 0, anchor);
+        if(!notes.Equals("")){CreateText(panelTransform, new Vector2(size.x*0.4f - 20, size.y*0.4f-20), new Vector2(size.x/4,100), notes, 40, 0, anchor);}
+        CreateButton(panelTransform, "Button0", actionLabel0, action, "0", new Vector3(-size.x / 5, -40 - size.y / 2, 0), new Vector2(300, 60));
+        CreateButton(panelTransform, "Button1", actionLabel1, action, "1", new Vector3(size.x / 5, -40 - size.y / 2, 0), new Vector2(300, 60));
 
         // showTutorialsMenu(rootMenu);
         return rootObj;
@@ -267,7 +272,7 @@ public class Utility {
     // results panel object
     public GameObject showResult(string userLang, int resSt, int resEn, string name1, string name2, int value1, int value2, int value3){
         Vector2 size = new Vector2(1200, 500);
-        GameObject newCanvas = CreateCanwas("rootMenu", new Vector3(0, main.baseLoc, 12), size);
+        GameObject newCanvas = CreateCanvas("rootMenu", new Vector3(0, main.baseLoc, 12), size);
         GameObject panel = new GameObject("ResultPanel");
         panel.AddComponent<CanvasRenderer>();
         Image img = panel.AddComponent<Image>();
@@ -361,29 +366,11 @@ public class Utility {
         // StartAction(speedUp);
     }
 
-    public IEnumerator FadeTo(GameObject obj){
-        if (obj){
-            enableAction(obj,false);
-            float smoothness = 0.05f; float duration = 1f;
-            Color colorStart = obj.GetComponent<Image>().color;
-            Color colorEnd = new Color(colorStart.r, colorStart.g, colorStart.b, 0);
-            float progress = 0; float increment = smoothness / duration; //The amount of change to apply.
-            while (progress < 1){
-                progress += increment;
-                if (obj) {
-                    obj.GetComponent<Image>().color = Color.Lerp(colorStart, colorEnd, progress);
-                    yield return new WaitForSeconds(smoothness);
-                } else { break; }
-            };
-            main.destroy(obj);
-        }
-        yield return null;
-    }
-
-    public IEnumerator rotateText(GameObject gm, bool appear, string nextAnimation, int index){
+    // text animation for switching text messages
+    public IEnumerator rotateText(GameObject gm, bool appear, float step, string nextAnimation, int index){
         enableAction(gm, false);
         Debug.Log("start animation for "+gm.name);
-        float step = stepAnimation;
+        //float step = stepAnimation;
         float currCountdownValue = 100f;
         Transform transform = gm.transform;        
         if (appear) { step = -step; transform.Rotate(Vector3.left, currCountdownValue); }        
@@ -394,6 +381,7 @@ public class Utility {
         }
         enableAction(gm, true);
         if (nextAnimation != "") { main.startNewAnimation(nextAnimation,index); }
+        main.trDirect = true;
         Debug.Log("Animation is completed");
     }
 
