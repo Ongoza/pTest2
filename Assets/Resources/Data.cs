@@ -14,6 +14,14 @@ public class Data {
         ,{ "ServerPort", "8888" }
     };
 
+    private static readonly Dictionary<string, string> listLng = new Dictionary<string, string>(){
+        {"English", "English"}
+        ,{"Russian", "Русский"}
+        ,{"Spanish", "Española"}
+    };
+
+    public static Dictionary<string, string> getLanguages() { return listLng; }
+
     private static readonly Dictionary<string, string> MessagesEn = new Dictionary<string, string>() {
         {"Intro", "<size=80><b>Test: determination of temperament (4 parts)</b></size>"}
         , {"selOneCol", "<b>Choose the most pleasant color</b>"}
@@ -66,6 +74,8 @@ public class Data {
         , {"btnBack", "Return"}
         , {"btnNext", "Next"}
         , {"btnStart", "Start"}
+        , {"btnLangSw","Change language" }
+        , {"msgLangSw","Select language" }
         , {"msgAbout", "This program was developed in the project www.ongoza.com as psychological tests transfering to virtual reality."}
     };
 
@@ -121,6 +131,8 @@ public class Data {
         ,{"btnBack","Volver"}
         ,{"btnNext","Siguiente"}
         ,{"btnStart","Comenzar"}
+        , {"btnLangSw","Cambiar idioma" }
+        , {"msgLangSw","Seleccione el idioma" }
         ,{"msgAbout","Este programa se desarrolló en el proyecto www.ongoza.com sobre la transferencia de pruebas psicológicas a la realidad virtual"}
     };
 
@@ -176,6 +188,8 @@ public class Data {
         ,{"btnBack","Вернуться"}
         ,{"btnNext","Далее"}
         ,{"btnStart","начать"}
+        , {"btnLangSw","Сменить язык" }
+        , {"msgLangSw","Выберите язык" }
         ,{"msgAbout","Эта программа разработана в ракмах проекта www.ongoza.com по переносу психологических тестов в виртуальную реальность."}
     };
 

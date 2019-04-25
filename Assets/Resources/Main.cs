@@ -158,11 +158,11 @@ public class Main : MonoBehaviour{
             }
             if (a != 0 ) { showArrow(a); } else {gmArrow.SetActive(false);}
         }
-        if (animVR){ txtVR.transform.Rotate(Vector3.back,1); }
+        if(animVR){if(txtVR){txtVR.transform.Rotate(Vector3.back, 1);}}
         userSceneDataTime[0] += Time.deltaTime;
         userSceneDataTime[1] += Time.deltaTime;
-        if (isActionSave) {
-            if (trackingTime[0] > trackingTime[1]){
+        if(isActionSave) {
+            if(trackingTime[0] > trackingTime[1]){
                 trackingTime[1] += Time.deltaTime;
                 int[] curAction = new int[14]{
                    Mathf.RoundToInt(Camera.main.transform.eulerAngles.x*precisionDec),
@@ -267,78 +267,77 @@ public class Main : MonoBehaviour{
     private void ClickSelectEvent(){
         isTimer = false;       
         Debug.Log("clickSelectEvent=" + curfocusType + "="+ curfocusObj);
-        switch (curfocusType){
-            case "Next":
+        switch (curfocusType) {
+            case "Next": // start next scena
                 GameObject model = GameObject.Find("Model");
                 if (model) { Destroy(model); }
-                StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScena", 1));
+                StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScene", 1));
                 break;
             case "Test": // test scenes activity
                 GameObject gm = GameObject.Find(curfocusObj);
                 StartCoroutine(utility3D.appearObject(gm, false));
                 //Debug.Log(testData.selectedObjectsList.Count + "="+ JsonUtility.ToJson(testData.selectedObjectsList));
-                testData.selectedObjectsList[testData.selectedObjectsList.Count-1].objs.Add( 
+                testData.selectedObjectsList[testData.selectedObjectsList.Count - 1].objs.Add(
                     new TestObject() {
-                        time = Mathf.RoundToInt(userSceneDataTime[1]*1000),
+                        time = Mathf.RoundToInt(userSceneDataTime[1] * 1000),
                         i = curfocusObjCode[0],
                         lx = curfocusObjCode[5],
                         ly = curfocusObjCode[6],
                         lz = curfocusObjCode[7],
                         rx = curfocusObjCode[8],
-                        type =  curfocusObjCode[1], // cur obj type 
+                        type = curfocusObjCode[1], // cur obj type 
                         color = curfocusObjCode[2], // cur obj color
                     });
                 userSceneDataTime[1] = 0f;
                 testsConfig[curTestIndex, 4]++;
                 // if this is a right object                
-                if (curfocusObjCode[0]!=0){ testsConfig[curTestIndex, 3]++; }
+                if (curfocusObjCode[0] != 0) { testsConfig[curTestIndex, 3]++; }
                 //Debug.Log("obj:"+ curfocusObj + " result right:" + testsConfig[curTestIndex, 3] + " total:" + testsConfig[curTestIndex, 4]);
                 // if a testing person reach a limit of objects
-                if (testsConfig[curTestIndex, 4] >= testsConfig[curTestIndex, 2]) {
-                    testEnd();                    
-                } else { 
+                if (testsConfig[curTestIndex, 4] >= testsConfig[curTestIndex, 2]) { testEnd();
+                } else {
                     string msg = string.Format(Data.getMessage(userLang, "Test_hint"), Data.getMessage(userLang, "color_" + testsConfig[curTestIndex, 1]), Data.getMessage(userLang, "obj_" + testsConfig[curTestIndex, 0]), testsConfig[curTestIndex, 4], testsConfig[curTestIndex, 2]);
-                    if (isHintDisplay) { msg += string.Format(Data.getMessage(userLang, "Test_timer"), Mathf.Floor(testTime).ToString());}
+                    if (isHintDisplay) { msg += string.Format(Data.getMessage(userLang, "Test_timer"), Mathf.Floor(testTime).ToString()); }
                     if (hintText) { hintText.text = msg; }
                 }
-               // Debug.Log("result2: right:"+testsConfig[curTestIndex, 3] + " total:"+testsConfig[curTestIndex, 4]);
+                // Debug.Log("result2: right:"+testsConfig[curTestIndex, 3] + " total:"+testsConfig[curTestIndex, 4]);
                 break;
-            case  "Keyboard": // email input scena, typing
-                if (curfocusObj.Contains("DEL")){
+            case "Keyboard": // email input scena, typing
+                if (curfocusObj.Contains("DEL")) {
                     string str = TextInput.text;
                     if (str.Length > 0) { TextInput.text = str.Substring(0, str.Length - 1); }
                 } else { if (TextInput) { TextInput.text += curfocusObj; } }
                 break;
             case "EnterName": // save user name
                 userData.Name = TextInput.text;
-                StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScena", 1));
+                StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScene", 1));
                 break;
             case "EnterEmail": // save user email
                 userData.Email = TextInput.text;
-                StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScena", 1));
+                StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScene", 1));
                 break;
             case "Exit": // exit from app
                 sendDataToServer();
                 Application.Quit();
                 break;
-            case "selOneCol":
+            case "selOneCol": // select only one color
                 StartCoroutine(colorTest.FadeTo(GameObject.Find("b_" + curfocusObj)));
                 int colorIndex = 0;
                 int.TryParse(curfocusObj, out colorIndex);
                 testsConfig[0, 1] = colorIndex;
                 testsConfig[1, 1] = colorIndex;
-                Debug.Log(testsConfig[1, 1]);
-                StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScena", 1));
+                //Debug.Log(testsConfig[1, 1]);
+                StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScene", 1));
                 break;
-            case "selAllCol":
+            case "selAllCol": // select colors one by one
                 StartCoroutine(colorTest.FadeTo(GameObject.Find("b_" + curfocusObj)));
                 int colorI = 0;
                 int.TryParse(curfocusObj, out colorI);
                 testData.colorTestResult.selected.Add(new int[] { colorI, Mathf.RoundToInt(userSceneDataTime[1] * 1000) });
-                userSceneDataTime[1]=0f;
-                if (testData.colorTestResult.selected.Count > 6){
+                userSceneDataTime[1] = 0f;
+                if (testData.colorTestResult.selected.Count > 6) {
                     float s = 0; float e = 0; float[] kArray = new float[] { 8.1f, 6.8f, 6, 5.3f, 4.7f, 4, 3.2f, 1.8f };
-                    for (int i = 0; i < testData.colorTestResult.selected.Count; i++){
+                    for (int i = 0; i < testData.colorTestResult.selected.Count; i++) {
                         if (i < 3) { if (testData.colorTestResult.selected[i][0] == 0 || testData.colorTestResult.selected[i][0] == 6 || testData.colorTestResult.selected[i][0] == 7) { s += kArray[i]; } }
                         if (i > 4) { if (testData.colorTestResult.selected[i][0] == 1 || testData.colorTestResult.selected[i][0] == 2 || testData.colorTestResult.selected[i][0] == 3 || testData.colorTestResult.selected[i][0] == 4) { s += kArray[7 - i]; } }
                         if (testData.colorTestResult.selected[i][0] == 2 || testData.colorTestResult.selected[i][0] == 3 || testData.colorTestResult.selected[i][0] == 4) { e += kArray[i]; }
@@ -347,24 +346,24 @@ public class Main : MonoBehaviour{
                     testData.colorTestResult.stress = Mathf.RoundToInt(100 * s / 42);
                     testData.colorTestResult.energy = Mathf.RoundToInt(100 * (e - 9) / 12);
                     testData.colorTestResult.totalTime = Mathf.RoundToInt(userSceneDataTime[0] * 1000);
-                    Debug.Log("Color test result= " + JsonUtility.ToJson(testData.colorTestResult));
-                    StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScena", 1));
+                    //Debug.Log("Color test result= " + JsonUtility.ToJson(testData.colorTestResult));
+                    StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScene", 1));
                 }
                 break;
-            case "NextQuestion":
+            case "NextQuestion": // text test action
                 int surKey = 0;
                 int.TryParse(curfocusObj, out surKey);
-                testData.textTestResult.answers.Add(new int[] {curQuestionKey, surKey, Mathf.RoundToInt(userSceneDataTime[1] * 1000) });
+                testData.textTestResult.answers.Add(new int[] { curQuestionKey, surKey, Mathf.RoundToInt(userSceneDataTime[1] * 1000) });
                 userSceneDataTime[1] = 0f;
-                Debug.Log("item = " + curQuestionKey + " " + surKey);
-                if (surKey == 0){                    
+                //Debug.Log("item = " + curQuestionKey + " " + surKey);
+                if (surKey == 0) {
                     if (Data.Answers["+"].Contains(curQuestionKey)) { testData.textTestResult.extra++; }
                     if (Data.Answers["n"].Contains(curQuestionKey)) { testData.textTestResult.stabil++; }
-                }else{
+                } else {
                     if (Data.Answers["-"].Contains(curQuestionKey)) { testData.textTestResult.extra++; }
                 }
                 Debug.Log("test result = " + JsonUtility.ToJson(testData.textTestResult));
-                if(questionsCount > testData.textTestResult.answers.Count) {
+                if (questionsCount > testData.textTestResult.answers.Count) {
                     StartCoroutine(utility.rotateText(rootObj, false, 5, "NextQuestion", 1));
                 } else {
                     float cnt = Data.getQuestionsCount(userLang) / 2;
@@ -376,17 +375,17 @@ public class Main : MonoBehaviour{
                     float[] pTypeValue = new float[2];
                     float mid = Mathf.PI / 4;
                     float pi_2 = Mathf.PI / 2;
-                    testData.textTestResult.Power = Mathf.RoundToInt( Mathf.Sqrt(Mathf.Pow(resExtra, 2) + Mathf.Pow(resStabil, 2)));
+                    testData.textTestResult.Power = Mathf.RoundToInt(Mathf.Sqrt(Mathf.Pow(resExtra, 2) + Mathf.Pow(resStabil, 2)));
                     float mod_a = Mathf.Abs(a);
                     if (mod_a <= mid) {
                         pTypeName[0] = "Choleric";
                         pTypeName[1] = "Sanguine";
                         pTypeValue[0] = Mathf.Abs(mid + a) / pi_2;
                         pTypeValue[1] = Mathf.Abs(mid - a) / pi_2;
-                    } else if (mod_a >= 3 * mid){
+                    } else if (mod_a >= 3 * mid) {
                         pTypeName[0] = "Phlegmatic";
                         pTypeName[1] = "Melancholic";
-                        if (a > 0){
+                        if (a > 0) {
                             pTypeValue[0] = Mathf.Abs(a - 3 * mid) / pi_2;
                             pTypeValue[1] = Mathf.Abs(5 * mid - a) / pi_2;
                         } else {
@@ -394,7 +393,7 @@ public class Main : MonoBehaviour{
                             pTypeValue[1] = Mathf.Abs(-3 * mid - a) / pi_2;
                         }
                     } else {
-                        if (testData.textTestResult.stabil > 0){
+                        if (testData.textTestResult.stabil > 0) {
                             pTypeName[0] = "Choleric";
                             pTypeName[1] = "Melancholic";
                             pTypeValue[0] = Mathf.Abs(3 * mid - a) / pi_2;
@@ -411,11 +410,17 @@ public class Main : MonoBehaviour{
                     testData.textTestResult.Value1 = Mathf.RoundToInt(100 * pTypeValue[0]);
                     testData.textTestResult.Name2 = pTypeName[1];
                     testData.textTestResult.Value2 = Mathf.RoundToInt(100 * pTypeValue[1]);
-                    StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScena", 1));
+                    StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScene", 1));
                 }
                 break;
-            case "Back": StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScena", -1)); break;
-            case "Repeat":
+            case "LangSw": animVR = false; StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScene", -1)); break;
+            case "LangSwMenu": // change language action
+                Debug.Log("obj= " +curfocusObj);
+                userLang = curfocusObj;
+                StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScene", 1));
+                break;
+            case "Back": StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScene", -1)); break;
+            case "Repeat": // repeat all tests
                 sendDataToServer();
                 curScene = 3;
                 NextScene(0);
@@ -436,7 +441,7 @@ public class Main : MonoBehaviour{
         trDirect = false;
         SceneEventSystem.enabled = false;        
         Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = false;
-        //Debug.Log("curScene=" + curScene +" delta="+ delta+" "+ JsonUtility.ToJson(curSnenaMotionData));
+        Debug.Log("curScene=" + curScene +" delta="+ delta+" "+ JsonUtility.ToJson(curSnenaMotionData));
         if (delta > 0){ testData.snenasMotionData.Add(curSnenaMotionData);}        
         curScene += delta;
         curfocusObjCode = new int[11] { -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -444,22 +449,21 @@ public class Main : MonoBehaviour{
         if (rootObj) { Destroy(rootObj);}
         if (TimerCanvas) { Destroy(TimerCanvas);}
         switch (curScene){
-            case 0: // show a intro message
-                try { txtVR = (GameObject)Instantiate(Resources.Load<GameObject>("VR")); }
-                catch (System.Exception e) { Debug.Log("Can not load VR nodel"); }
-                rootObj =  utility.ShowMessage(Data.getMessage(userLang, "Intro"), "Next", Data.getMessage(userLang, "btnNext"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
-                addVR(rootObj, new Vector3(0f,5,0));
-                animVR = true;
-                trDirect = true;
-                //StartCoroutine(utility.rotateText(rootObj,true,"",0));
+            case -1: // change language menu
+                rootObj = utility.ShowSwitchlngMenu(userLang);
+                StartCoroutine(utility.rotateText(rootObj, true, 2, "", 0));
                 break;
-            //case 1: // start select a color
-            //    rootObj = colorTest.showColors("selOneCol");
-            //    string msg = Data.getMessage(userLang, "selOneCol");
-            //    GameObject msgObj = utility.ShowMessage(msg, "", "", new Vector2(1200, 100), TextAnchor.MiddleCenter, new Vector2(0, 10));
-            //    msgObj.transform.SetParent(rootObj.transform);
-            //    msgObj.transform.position = new Vector3(0,4.4f,16);
-            //    break;
+            case 0: // show a intro message
+                Debug.Log("Start scene");
+                rootObj = utility.ShowMessage(Data.getMessage(userLang, "Intro"), "Next", Data.getMessage(userLang, "btnNext"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
+                utility.CreateButton(rootObj.transform.GetChild(0).gameObject.transform.GetChild(0).gameObject.transform, "LangSw", Data.getMessage(userLang, "btnLangSw"), "LangSw", "", new Vector3(360, 230, 0), new Vector2(360, 60));
+                try {
+                    txtVR = (GameObject)Instantiate(Resources.Load<GameObject>("VR"));
+                    addVR(rootObj, new Vector3(0f, 5, 0));
+                    animVR = true; }
+                catch (System.Exception e) { Debug.Log("Can not load VR nodel"); }                
+                trDirect = true;                
+                break;
             case 1: // show a start test 1 message
                 curTestIndex = 0;
                 string msg1 = string.Format(Data.getMessage(userLang, "Test1"), Data.getMessage(userLang, "color_" + testsConfig[curTestIndex, 0]), Data.getMessage(userLang, "obj_" + testsConfig[curTestIndex, 0]));
@@ -487,17 +491,16 @@ public class Main : MonoBehaviour{
                 break;
             case 5: // show a color test start message
                 rootObj = utility.ShowMessage(Data.getMessage(userLang, "IntroColTest"), "Next", Data.getMessage(userLang, "btnStart"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
-
                 break;
             case 6: // start color test 
-                Debug.Log("Start color test "+JsonUtility.ToJson(testData.colorTestResult));
+                //Debug.Log("Start color test "+JsonUtility.ToJson(testData.colorTestResult));
                 if(testData.colorTestResult.selected != null) { testData.colorTestResult.selected.Clear();
                 } else { testData.colorTestResult.selected = new List<int[]>();}
                 Debug.Log("Start color test " + JsonUtility.ToJson(testData.colorTestResult));
                 testData.colorTestResult.energy = 0;
                 testData.colorTestResult.stress = 0;
                 testData.colorTestResult.totalTime = 0;
-                Debug.Log("Start color test " + JsonUtility.ToJson(testData.colorTestResult));
+                //Debug.Log("Start color test " + JsonUtility.ToJson(testData.colorTestResult));
                 rootObj = colorTest.showColors("selAllCol");
                 GameObject msgObj2 = utility.ShowMessage(Data.getMessage(userLang, "selAllCol"), "", Data.getMessage(userLang, "btnStart"), new Vector2(1200, 200), TextAnchor.MiddleCenter, new Vector2(0, 20));
                 msgObj2.transform.SetParent(rootObj.transform);
@@ -612,7 +615,7 @@ public class Main : MonoBehaviour{
 
     public void startNewAnimation(string nextAnimation, int index) {
         switch (nextAnimation){
-            case "NextScena" :
+            case "NextScene" :
                 NextScene(index);
                 break;
             case "NextQuestion":

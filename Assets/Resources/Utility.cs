@@ -390,4 +390,16 @@ public class Utility {
             GvrPointerGraphicRaycaster action = obj.GetComponent<GvrPointerGraphicRaycaster>();
             if (action) { action.enabled = act; }}}
 
+    public GameObject ShowSwitchlngMenu(string userLang){
+        GameObject rootObj =  ShowMessage(Data.getMessage(userLang, "msgLangSw"), "", "", new Vector2(1200, 150), TextAnchor.MiddleCenter, new Vector2(0, 0));
+        Dictionary<string, string> langs = Data.getLanguages();
+        int cnt  = langs.Count, j=-350;
+        var enumerator = langs.GetEnumerator();
+        while (enumerator.MoveNext()){
+            CreateButton(rootObj.transform.GetChild(0).gameObject.transform.GetChild(0).gameObject.transform, "Button"+j, enumerator.Current.Value, "LangSwMenu", enumerator.Current.Key, new Vector3(j, -150, 0), new Vector2(300, 65));
+            j += 350;
+        }
+        return rootObj;    
+    }
+
 }
