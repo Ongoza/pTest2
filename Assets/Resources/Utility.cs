@@ -329,9 +329,9 @@ public class Utility {
                 Debug.Log("Start scene " + scene + " tr=" + startNewScene);
                 main.camFade.GetComponent<Renderer>().enabled = false;
                 if (main.SceneEventSystem) { main.SceneEventSystem.enabled = true; }
-                main.NextScene(scene);
+                main.NextScene(0); 
             } else { Application.Quit(); }
-        } else { Debug.Log("Can not find camFade object"); main.NextScene(scene);}
+        } else { Debug.Log("Can not find camFade object"); main.NextScene(0);}
     }
 
     // a rotate transition between scenas

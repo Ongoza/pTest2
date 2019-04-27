@@ -221,7 +221,7 @@ public class Utility3D{
 
     // transform coordinates from Spherical To Cartesian and and some random parameters
     Vector3 SphericalToCartesianPlusRandom(float polar, float evalution){
-        utility.logDebug("Start");
+        //utility.logDebug("Start");
         Vector3 outCart;
         float distanceR = Random.Range(distanceMin, distanceMax);
         float evalutionR = Random.Range(evalution - aStartR, evalution + aStartR);
@@ -306,7 +306,7 @@ public class Utility3D{
             Color colorEnd = new Color(colorStart.r, colorStart.g, colorStart.b, endTransparent);
             rend.material.color = colorStart;
             while (progress <= 1){   
-                Debug.Log("3d progress="+progress);
+                //Debug.Log("3d progress="+progress);
                 if (gm){
                     rend.material.color = Color.Lerp(colorStart, colorEnd, progress);
                     progress += step;

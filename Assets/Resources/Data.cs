@@ -24,6 +24,7 @@ public class Data {
 
     private static readonly Dictionary<string, string> MessagesEn = new Dictionary<string, string>() {
         {"Intro", "<size=80><b>Test: determination of temperament (4 parts)</b></size>"}
+        ,{ "gyroWarn", "Your device does not have a gyroscope.\nTry selecting the <Next> button."}
         , {"selOneCol", "<b>Choose the most pleasant color</b>"}
         , {"selAllCol", "<b>Choose one by one the colors you like most</b>"}
         , {"Gyro", "Sorry \nYour device does not have a gyroscope."} 
@@ -81,6 +82,7 @@ public class Data {
 
     private static readonly Dictionary<string, string> MessagesSp = new Dictionary<string, string>() {
         { "Intro", "<size=80><b>Prueba: determinación del temperamento (4 partes)</b></size>" }
+        ,{ "gyroWarn", "Su dispositivo no tiene un giroscopio.\nIntente seleccionar el botón <Siguiente>"}
         ,{ "selOneCol", "<b>Elija el color más agradable</b>" }
         ,{ "selAllCol", "<b>Elija uno por uno los colores que más le gusten</b>" }
         ,{ "Gyro","Lo siento\nSu dispositivo no tiene un giroscopio" } // Sorry\nYour device has to have a Gyroscope
@@ -131,13 +133,14 @@ public class Data {
         ,{"btnBack","Volver"}
         ,{"btnNext","Siguiente"}
         ,{"btnStart","Comenzar"}
-        , {"btnLangSw","Cambiar idioma" }
-        , {"msgLangSw","Seleccione el idioma" }
+        ,{"btnLangSw","Cambiar idioma" }
+        ,{"msgLangSw","Seleccione el idioma" }
         ,{"msgAbout","Este programa se desarrolló en el proyecto www.ongoza.com sobre la transferencia de pruebas psicológicas a la realidad virtual"}
     };
 
     private static readonly Dictionary<string, string> MessagesRu = new Dictionary<string, string>() {
         { "Intro", "<size=80><b>Тест:  определение темперамента (4 части)</b></size>" }
+        ,{ "gyroWarn", "Ваше устройство не имеет гироскопа.\n Попробуйте выбрать кнопку <Далее>"}
         ,{ "selOneCol", "<b>Выберите самый приятный цвет</b>" }
         ,{ "selAllCol", "<b>Выберите один за одним цвета, которые нравятся больше всего</b>" }
         ,{ "Gyro","Извините\nВаше устройство не имеет гироскопа. " } // Sorry\nYour device has to have a Gyroscope
@@ -188,8 +191,8 @@ public class Data {
         ,{"btnBack","Вернуться"}
         ,{"btnNext","Далее"}
         ,{"btnStart","начать"}
-        , {"btnLangSw","Сменить язык" }
-        , {"msgLangSw","Выберите язык" }
+        ,{"btnLangSw","Сменить язык" }
+        ,{"msgLangSw","Выберите язык" }
         ,{"msgAbout","Эта программа разработана в ракмах проекта www.ongoza.com по переносу психологических тестов в виртуальную реальность."}
     };
 

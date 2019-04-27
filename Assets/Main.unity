@@ -710,7 +710,7 @@ MonoBehaviour:
   curTestIndex: 0
   isHintDisplay: 0
   testTime: 0
-  hintText: {fileID: 1396359516}
+  hintText: {fileID: 0}
   TimerCanvas: {fileID: 0}
 --- !u!1001 &1637427139
 PrefabInstance:

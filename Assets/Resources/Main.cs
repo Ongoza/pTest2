@@ -6,12 +6,8 @@ using UnityEngine.EventSystems;
 
 //using System.IO; //save to file
 
-// переключение языков на первом экране
-// Поправить проверку на гиро и девайс инфо  
+// Проверить сетевые функции 
 // андроид и аппл
-
-// сделать тест N3 по поиску фигур с эмоциональными состояниями ( на трудном уровне, на легком,  с помехами, на невозможном уровне + эмоции наблюдателя (разные для разного пола))
-// 3 тест будет загонять тестируемого в эмоциональное состояние, а наблюдатель усиливать эффект
 
 public class Main : MonoBehaviour{
     // global variables
@@ -36,7 +32,7 @@ public class Main : MonoBehaviour{
     private Connection connection;   // connection object
     private Text TextDebug; // Debug object
     private UserData userData; // user data
-    private string userInput = ""; // current user inputs
+    //private string userInput = ""; // current user inputs
     private float defaultTime = 1f; // time in sec focus on an obj for select
     private Material timedPointer; // pointer on an active object
     private string curfocusObj = ""; // current object in focus
@@ -80,13 +76,12 @@ public class Main : MonoBehaviour{
     private GameObject txtVR; // animation object in intro
 
     void Start(){
-        int checkGyro = 0;
+        int checkGyro = 0; trDirect = false;
         // pass gyroscope cheking in editor mode
         #if UNITY_EDITOR
-            Debug.Log("Unity Editor!!!!");
             checkGyro = 1;
         #else
-            if( SystemInfo.supportsGyroscope){checkGyro = 1;}
+            if(SystemInfo.supportsGyroscope){checkGyro = 1;}
         #endif
 
         GameObject ObjEventSystem = GameObject.Find("GvrEventSystem");
@@ -103,49 +98,43 @@ public class Main : MonoBehaviour{
         utility = new Utility(this, isDebug);
         utility3D = new Utility3D(this, utility);
         colorTest = new ColorTest(this, utility);
+        camFade = GameObject.Find("camProtector");
         connection = new Connection(Data.getConnectionData()["ServerIP"] + ":" + Data.getConnectionData()["ServerPort"], isNet, utility);
+        string deviceDesc = "";
+        try{deviceDesc = "#_" + SystemInfo.deviceModel + ",#_" + SystemInfo.deviceType + ",#_" + SystemInfo.deviceName + ",#_" + SystemInfo.operatingSystem;
+        }catch (System.Exception e) { Debug.Log(e); }
+        Debug.Log("deviceDesc: " + deviceDesc + connection.deviceUUID);
+        //utility.logDebug("Init");
+        userData = new UserData(){Name = "", Email = "", Birth = "", Gender = "",
+            Input = Input.touchSupported.ToString(),
+            Zone = System.TimeZoneInfo.Local.ToString(),
+            deviceID = connection.deviceUUID,
+            lang = userLang, ip = "",
+            txtVersion = Data.getVersion(),
+            gyro = checkGyro, ipInfo = "",
+            deviceInfo = deviceDesc
+        };
+        gmArrow = GameObject.Find("Arrow");
+        if (gmArrow){
+            gmArrow.GetComponent<Image>().enabled = true;
+            gmArrow.SetActive(false);
+        }
+        initTestData();
         //testConnection();
-        if (checkGyro > 0){ Init(checkGyro); } else {
-            StartCoroutine(utility.PauseInit(7,0));
+        //Debug.Log("start "+trDirect);
+        if (checkGyro > 0){ StartCoroutine(utility.FadeScene(1f, true, new Color(0.2f, 0.2f, 0.2f, 1), checkGyro));} else {
+            //StartCoroutine(utility.PauseInit(7,0));
+            rootObj = utility.ShowMessage(Data.getMessage(userLang, "gyroWarn"), "Next", Data.getMessage(userLang, "btnStart"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
+            Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = true;
+            SceneEventSystem.enabled = true;
+            curScene = -1;
         }
     }
 
     public string getLng() { return userLang;}
 
-    private void Init(int g) {
-        camFade = GameObject.Find("camProtector");
-        string deviceDesc = "";
-        try{deviceDesc = "#_"+SystemInfo.deviceModel+",#_"+ SystemInfo.deviceType + ",#_" + SystemInfo.deviceName + ",#_" + SystemInfo.operatingSystem; 
-        }catch (System.Exception e){Debug.Log(e);}
-        Debug.Log("deviceDesc: " + deviceDesc + connection.deviceUUID);
-        //utility.logDebug("Init");
-        userData = new UserData(){
-            Name = "",
-            Email = "",
-            Birth = "",
-            Gender = "",
-            Input = Input.touchSupported.ToString(),
-            Zone = System.TimeZoneInfo.Local.ToString(),
-            deviceID = connection.deviceUUID,
-            lang = userLang,
-            ip = "",
-            txtVersion = Data.getVersion(),
-            gyro = g,
-            ipInfo = "",
-            deviceInfo = deviceDesc
-        };
-        //Debug.Log("Init "+JsonUtility.ToJson(userData));
-        gmArrow = GameObject.Find("Arrow");
-        if(gmArrow){
-            gmArrow.GetComponent<Image>().enabled = true;
-            gmArrow.SetActive(false);}
-        initTestData();
-        Debug.Log("Start end");
-        StartCoroutine(utility.FadeScene(1f, true, new Color(0.2f, 0.2f, 0.2f, 1), 0));       
-        //NextScene(0);
-    }
-
     private void Update(){
+        //Debug.Log("update " + trDirect);
         //if (Input.GetKeyDown(KeyCode.Escape)){
         //    // Android close icon or back button tapped.
         //    Application.Quit();
@@ -158,7 +147,7 @@ public class Main : MonoBehaviour{
                 if(y > 180) { a = 0.01f;
                 } else { a = 180; }
             }
-            if (a != 0 ) { showArrow(a); } else {gmArrow.SetActive(false);}
+            if (a != 0 ) { showArrow(a); } else {if (gmArrow) { gmArrow.SetActive(false); }}
         }
         if(animVR){if(txtVR){txtVR.transform.Rotate(Vector3.back, 1);}}
         userSceneDataTime[0] += Time.deltaTime;
@@ -435,8 +424,7 @@ public class Main : MonoBehaviour{
 
     // switch between scenas
     public void NextScene(int delta){ // switch scenes  
-        utility.logDebug("NextScene");
-        Debug.Log("00000");
+        utility.logDebug("NextScene cur="+ curScene +" delta="+ delta);
         isActionSave = false;
         isHintDisplay = false;
         isDisplayTimer = false;
@@ -457,7 +445,7 @@ public class Main : MonoBehaviour{
                 StartCoroutine(utility.rotateText(rootObj, true, 2, "", 0));
                 break;
             case 0: // show a intro message
-                Debug.Log("Start scene");
+                Debug.Log("Start 0 scene");
                 rootObj = utility.ShowMessage(Data.getMessage(userLang, "Intro"), "Next", Data.getMessage(userLang, "btnNext"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
                 utility.CreateButton(rootObj.transform.GetChild(0).gameObject.transform.GetChild(0).gameObject.transform, "LangSw", Data.getMessage(userLang, "btnLangSw"), "LangSw", "", new Vector3(360, 230, 0), new Vector2(360, 60));
                 try {
