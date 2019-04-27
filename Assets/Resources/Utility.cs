@@ -89,7 +89,7 @@ public class Utility {
     }
 
     public void logDebug(string msg){
-        if (isDebug){ if (TextDebug){ TextDebug.text += msg + "=>";}
+        if (isDebug){ if (TextDebug){ TextDebug.text += msg + "=>"; Debug.Log(msg); }
         }else{Debug.Log(msg);}
     }
 
@@ -311,37 +311,27 @@ public class Utility {
     }
 
     // a fade transition between scenas
-    public IEnumerator FadeScene(float duration, bool startNewScene, Color color, string sceneName){
-        //utility.logDebug("FadeScene");
+    public IEnumerator FadeScene(float duration, bool startNewScene, Color color, int scene){
         if (main.camFade) {
-            //GameObject camFade = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             main.camFade.GetComponent<Renderer>().enabled = true;
-            //Debug.Log("Start fade scene " + color);
-            float startTransparent = 0f;
-            float endTransparent = 1f;
-            float smoothness = 0.05f;
-            float progress = 0;
+            float startTransparent = 0f; float endTransparent = 1f; float smoothness = 0.05f; float progress = 0;
             float increment = smoothness / duration; //The amount of change to apply.
-            if (startNewScene == true){
-                startTransparent = 1f;
-                endTransparent = 0f;
-            }
+            if (startNewScene == true){ startTransparent = 1f; endTransparent = 0f;}
             Color colorStart = new Color(color.r, color.g, color.b, startTransparent);
             main.camFade.GetComponent<Renderer>().materials[0].color = colorStart;
             Color colorEnd = new Color(colorStart.r, colorStart.g, colorStart.b, endTransparent);
             while (progress < 1){
                 progress += increment;
-                //Debug.Log(progress);
                 main.camFade.GetComponent<Renderer>().materials[0].color = Color.Lerp(colorStart, colorEnd, progress);
                 yield return new WaitForSeconds(smoothness);
             }
-            yield return null;
             if (startNewScene == true){
-                Debug.Log("Start scene " + sceneName + " tr=" + startNewScene);
+                Debug.Log("Start scene " + scene + " tr=" + startNewScene);
                 main.camFade.GetComponent<Renderer>().enabled = false;
                 if (main.SceneEventSystem) { main.SceneEventSystem.enabled = true; }
-            } else { Debug.Log("Start scene " + sceneName + " tr=" + startNewScene);}
-        } else { Debug.Log("Can not find camFade object"); }
+                main.NextScene(scene);
+            } else { Application.Quit(); }
+        } else { Debug.Log("Can not find camFade object"); main.NextScene(scene);}
     }
 
     // a rotate transition between scenas

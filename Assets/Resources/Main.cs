@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+//using System.Collections;
 
 //using System.IO; //save to file
 
@@ -104,7 +105,9 @@ public class Main : MonoBehaviour{
         colorTest = new ColorTest(this, utility);
         connection = new Connection(Data.getConnectionData()["ServerIP"] + ":" + Data.getConnectionData()["ServerPort"], isNet, utility);
         //testConnection();
-        if (checkGyro > 0){ Init(checkGyro); } else { StartCoroutine(utility.PauseInit(7,0));}
+        if (checkGyro > 0){ Init(checkGyro); } else {
+            StartCoroutine(utility.PauseInit(7,0));
+        }
     }
 
     public string getLng() { return userLang;}
@@ -136,11 +139,10 @@ public class Main : MonoBehaviour{
         if(gmArrow){
             gmArrow.GetComponent<Image>().enabled = true;
             gmArrow.SetActive(false);}
-        initTestData();      
-        // StartCoroutine(fadeScene(2f, true, new Color(0.2f, 0.2f, 0.2f, 1), "Main"));
-        //StartCoroutine(RotateCamera(2f, 0.0001f, "End rotation"));        
+        initTestData();
         Debug.Log("Start end");
-        NextScene(0);
+        StartCoroutine(utility.FadeScene(1f, true, new Color(0.2f, 0.2f, 0.2f, 1), 0));       
+        //NextScene(0);
     }
 
     private void Update(){
@@ -434,6 +436,7 @@ public class Main : MonoBehaviour{
     // switch between scenas
     public void NextScene(int delta){ // switch scenes  
         utility.logDebug("NextScene");
+        Debug.Log("00000");
         isActionSave = false;
         isHintDisplay = false;
         isDisplayTimer = false;

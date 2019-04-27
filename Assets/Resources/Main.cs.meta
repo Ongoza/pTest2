@@ -3,7 +3,12 @@ guid: 6f97a193fb53b17418d4d40abeb9fe42
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - camFade: {fileID: 100000, guid: 4bcd3bbb48c53224792394bad217bb26, type: 3}
+  - TextInput: {instanceID: 0}
+  - SceneEventSystem: {instanceID: 0}
+  - hintText: {instanceID: 0}
+  - TimerCanvas: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 
