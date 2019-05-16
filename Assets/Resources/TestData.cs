@@ -13,8 +13,9 @@
 // User ations in all (7) scenes
 
 [System.Serializable] public class TestData{
-    public string startDateTime;
+    public string userStartTime;
     public UserData userData;
+    public string ipInfo;
     public List<TestObjects> rightObjectsList;
     public List<TestObjects> selectedObjectsList;
     public List<SnenaMotionData> snenasMotionData;
@@ -34,18 +35,17 @@
 }
 
 [System.Serializable] public class UserData{
-    public string Name;
-    public string Email;
-    public string Birth;
-    public string Gender;
-    public string Input;
-    public string Zone;
+    public string name;
+    public string email;
+    public string birth;
+    public string gender;
+    public string input;
+    public string zone;
     public string deviceID;
     public string lang;
     public string ip;
     public string txtVersion;
     public int gyro;
-    public string ipInfo;
     public string deviceInfo;
     //public string userID;
 }
@@ -72,7 +72,7 @@
 }
 
 [System.Serializable] public class TextTestResult{
-    public List<int[]> answers; 
+    public List<TestAnswer> answers; 
     public int extra;
     public int stabil;
     public int totalTime;
@@ -84,8 +84,14 @@
 }
 
 [System.Serializable] public class ColorTestResult {
-    public List<int[]> selected;
+    public List<TestAnswer> selected;
     public int energy;
     public int stress;
     public int totalTime;
+}
+
+[System.Serializable] public class TestAnswer {
+    public int id;
+    public int nm;
+    public int t;
 }

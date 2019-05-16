@@ -4,8 +4,8 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 //using System.Collections;
 
-//using System.IO; //save to file
-
+using System.IO; //save to file
+// add birth and gender
 // Проверить сетевые функции 
 // андроид и аппл
 
@@ -14,11 +14,13 @@ public class Main : MonoBehaviour{
     private int curScene = 0; //  start scene index 
     private bool isDebug = false; // VR debug enable
     private bool isNet = false; // network enable
+    private bool isNetFile = true; // save network data to file
+    private bool sendDatafromFile = false; // send data to server from local file
 
     private float[] trackingTime = new float[] { 30f, 0f }; // [0] time in sec while moving are recording for each action, [1] - current timer
-    private float[] timerShowResult = new float[] { 0f, 10f, 10f }; // timer in sec how long user read results [trigger,default,current] before send data to server
+    private bool isTimerShowResult = false; // timer in sec how long user read results [trigger,default,current] before send data to server
     private float[] userSceneDataTime = new float[] { 0.0f,0f} ; // [0] timer for scena, [1] timer for action
-    public bool trDirect = false; // to control or do not control a user head direction
+    private bool trDirect = false; // to control or do not control a user head direction
     public int precisionDec = 100; // number dec after point in movement control 1 - 0, 10-0.0, 100 - 0.00
     public float baseLoc = 2; //  Y location for menus
     public GameObject camFade; // camera Fade object
@@ -105,13 +107,13 @@ public class Main : MonoBehaviour{
         }catch (System.Exception e) { Debug.Log(e); }
         Debug.Log("deviceDesc: " + deviceDesc + connection.deviceUUID);
         //utility.logDebug("Init");
-        userData = new UserData(){Name = "", Email = "", Birth = "", Gender = "",
-            Input = Input.touchSupported.ToString(),
-            Zone = System.TimeZoneInfo.Local.ToString(),
+        userData = new UserData(){name = "", email = "", birth = "", gender = "",
+            input = Input.touchSupported.ToString(),
+            zone = System.TimeZoneInfo.Local.ToString(),
             deviceID = connection.deviceUUID,
             lang = userLang, ip = "",
             txtVersion = Data.getVersion(),
-            gyro = checkGyro, ipInfo = "",
+            gyro = checkGyro, 
             deviceInfo = deviceDesc
         };
         gmArrow = GameObject.Find("Arrow");
@@ -120,7 +122,7 @@ public class Main : MonoBehaviour{
             gmArrow.SetActive(false);
         }
         initTestData();
-        //testConnection();
+        if (sendDatafromFile) { testConnection(); }
         //Debug.Log("start "+trDirect);
         if (checkGyro > 0){ StartCoroutine(utility.FadeScene(1f, true, new Color(0.2f, 0.2f, 0.2f, 1), checkGyro));} else {
             //StartCoroutine(utility.PauseInit(7,0));
@@ -183,6 +185,7 @@ public class Main : MonoBehaviour{
                 }
             } else { // limit time actions recording
                 Debug.Log("reach a records time limit "+ trackingTime);
+                if (isTimerShowResult){sendDataToServer();};
                 isActionSave = false;
             }
         }
@@ -204,11 +207,12 @@ public class Main : MonoBehaviour{
                 }
             }
         }
-        if(timerShowResult[0] > 0){
-            // send data to server after waiting            
-            if (timerShowResult[2] > 0) { timerShowResult[2]--;
-            }else{ sendDataToServer();}
-        }
+        //if(timerShowResult[0] > 0){
+        //    // send data to server after waiting 
+        //    Debug.Log("Send data to server " + timerShowResult[2]);
+        //    if (timerShowResult[2] > 0) { timerShowResult[2]--;
+        //    }else{ sendDataToServer();}
+        //}
     }
 
     // on the cusror over an active object in a scena
@@ -299,12 +303,36 @@ public class Main : MonoBehaviour{
                     if (str.Length > 0) { TextInput.text = str.Substring(0, str.Length - 1); }
                 } else { if (TextInput) { TextInput.text += curfocusObj; } }
                 break;
+            case "KeyboardDigit": // input date
+                string strDigit = TextInput.text;
+                int pos = strDigit.IndexOf('X');
+                char[] chars = strDigit.ToCharArray();
+                if (curfocusObj.Contains("DEL")){
+                    Debug.Log(" digts = "+ strDigit + " pos="+pos);
+                    if (pos > 0) {
+                        int jDig;
+                        for (jDig = pos-1; jDig >= 0; jDig--) {
+                            if (!chars[jDig].Equals(' ')){
+                                chars[jDig] = 'X';
+                                TextInput.text = new string(chars);
+                                break;
+                            }
+                        }                        
+                    }
+                }else {if(TextInput){
+                        chars[pos] = curfocusObj.ToCharArray()[0];
+                        TextInput.text = new string(chars);
+                        if (pos > 22){
+                            StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScene", 1));
+                        }
+                    } }
+                break;
             case "EnterName": // save user name
-                userData.Name = TextInput.text;
+                userData.name = TextInput.text;
                 StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScene", 1));
                 break;
             case "EnterEmail": // save user email
-                userData.Email = TextInput.text;
+                userData.email = TextInput.text;
                 StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScene", 1));
                 break;
             case "Exit": // exit from app
@@ -324,15 +352,15 @@ public class Main : MonoBehaviour{
                 StartCoroutine(colorTest.FadeTo(GameObject.Find("b_" + curfocusObj)));
                 int colorI = 0;
                 int.TryParse(curfocusObj, out colorI);
-                testData.colorTestResult.selected.Add(new int[] { colorI, Mathf.RoundToInt(userSceneDataTime[1] * 1000) });
+                testData.colorTestResult.selected.Add(new TestAnswer {id = colorI, nm = 0, t= Mathf.RoundToInt(userSceneDataTime[1] * 1000) });
                 userSceneDataTime[1] = 0f;
                 if (testData.colorTestResult.selected.Count > 6) {
                     float s = 0; float e = 0; float[] kArray = new float[] { 8.1f, 6.8f, 6, 5.3f, 4.7f, 4, 3.2f, 1.8f };
                     for (int i = 0; i < testData.colorTestResult.selected.Count; i++) {
-                        if (i < 3) { if (testData.colorTestResult.selected[i][0] == 0 || testData.colorTestResult.selected[i][0] == 6 || testData.colorTestResult.selected[i][0] == 7) { s += kArray[i]; } }
-                        if (i > 4) { if (testData.colorTestResult.selected[i][0] == 1 || testData.colorTestResult.selected[i][0] == 2 || testData.colorTestResult.selected[i][0] == 3 || testData.colorTestResult.selected[i][0] == 4) { s += kArray[7 - i]; } }
-                        if (testData.colorTestResult.selected[i][0] == 2 || testData.colorTestResult.selected[i][0] == 3 || testData.colorTestResult.selected[i][0] == 4) { e += kArray[i]; }
-                        //Debug.Log("Calculate: i=" +i+" color="+testData.colorTestResult.selected[i][0]+" s=" +s+" e="+e); //
+                        if (i < 3) { if (testData.colorTestResult.selected[i].id == 0 || testData.colorTestResult.selected[i].id == 6 || testData.colorTestResult.selected[i].id == 7) { s += kArray[i]; } }
+                        if (i > 4) { if (testData.colorTestResult.selected[i].id == 1 || testData.colorTestResult.selected[i].id == 2 || testData.colorTestResult.selected[i].id == 3 || testData.colorTestResult.selected[i].id == 4) { s += kArray[7 - i]; } }
+                        if (testData.colorTestResult.selected[i].id == 2 || testData.colorTestResult.selected[i].id == 3 || testData.colorTestResult.selected[i].id == 4) { e += kArray[i]; }
+                        //Debug.Log("Calculate: i=" +i+" color="+testData.colorTestResult.selected[i].id + " s=" +s+" e="+e); //
                     }
                     testData.colorTestResult.stress = Mathf.RoundToInt(100 * s / 42);
                     testData.colorTestResult.energy = Mathf.RoundToInt(100 * (e - 9) / 12);
@@ -344,16 +372,16 @@ public class Main : MonoBehaviour{
             case "NextQuestion": // text test action
                 int surKey = 0;
                 int.TryParse(curfocusObj, out surKey);
-                testData.textTestResult.answers.Add(new int[] { curQuestionKey, surKey, Mathf.RoundToInt(userSceneDataTime[1] * 1000) });
+                testData.textTestResult.answers.Add(new TestAnswer {id = curQuestionKey, nm = surKey, t = Mathf.RoundToInt(userSceneDataTime[1] * 1000) });
                 userSceneDataTime[1] = 0f;
-                //Debug.Log("item = " + curQuestionKey + " " + surKey);
+                //Debug.Log("item = " + JsonUtility.ToJson(testData.textTestResult.answers));
                 if (surKey == 0) {
                     if (Data.Answers["+"].Contains(curQuestionKey)) { testData.textTestResult.extra++; }
                     if (Data.Answers["n"].Contains(curQuestionKey)) { testData.textTestResult.stabil++; }
                 } else {
                     if (Data.Answers["-"].Contains(curQuestionKey)) { testData.textTestResult.extra++; }
                 }
-                Debug.Log("test result = " + JsonUtility.ToJson(testData.textTestResult));
+                //Debug.Log("test result = " + JsonUtility.ToJson(testData.textTestResult));
                 if (questionsCount > testData.textTestResult.answers.Count) {
                     StartCoroutine(utility.rotateText(rootObj, false, 5, "NextQuestion", 1));
                 } else {
@@ -395,12 +423,12 @@ public class Main : MonoBehaviour{
                             pTypeValue[0] = Mathf.Abs(-mid - a) / pi_2;
                             pTypeValue[1] = Mathf.Abs(-3 * mid - a) / pi_2;
                         }
-                    }
-                    Debug.Log("Extra=" + resExtra + " Stabil=" + resStabil + "a=" + a + " str1=" + pTypeName[0] + " " + pTypeValue[0] + " str2=" + pTypeName[1] + " " + pTypeValue[1]);
+                    }                    
                     testData.textTestResult.Name1 = pTypeName[0];
                     testData.textTestResult.Value1 = Mathf.RoundToInt(100 * pTypeValue[0]);
                     testData.textTestResult.Name2 = pTypeName[1];
                     testData.textTestResult.Value2 = Mathf.RoundToInt(100 * pTypeValue[1]);
+                    Debug.Log("item = " + JsonUtility.ToJson(testData.textTestResult));
                     StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScene", 1));
                 }
                 break;
@@ -408,6 +436,11 @@ public class Main : MonoBehaviour{
             case "LangSwMenu": // change language action
                 Debug.Log("obj= " +curfocusObj);
                 userLang = curfocusObj;
+                StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScene", 1));
+                break;
+            case "GenderSwMenu":
+                Debug.Log("obj= " + curfocusObj);
+                userData.gender = curfocusObj;
                 StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScene", 1));
                 break;
             case "Back": StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScene", -1)); break;
@@ -432,7 +465,7 @@ public class Main : MonoBehaviour{
         trDirect = false;
         SceneEventSystem.enabled = false;        
         Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = false;
-        Debug.Log("curScene=" + curScene +" delta="+ delta+" "+ JsonUtility.ToJson(curSnenaMotionData));
+       // Debug.Log("curScene=" + curScene +" delta="+ delta+" "+ JsonUtility.ToJson(curSnenaMotionData));
         if (delta > 0){ testData.snenasMotionData.Add(curSnenaMotionData);}        
         curScene += delta;
         curfocusObjCode = new int[11] { -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -443,11 +476,12 @@ public class Main : MonoBehaviour{
             case -1: // change language menu
                 rootObj = utility.ShowSwitchlngMenu(userLang);
                 StartCoroutine(utility.rotateText(rootObj, true, 2, "", 0));
+                trDirect = true;
                 break;
             case 0: // show a intro message
                 Debug.Log("Start 0 scene");
                 rootObj = utility.ShowMessage(Data.getMessage(userLang, "Intro"), "Next", Data.getMessage(userLang, "btnNext"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
-                utility.CreateButton(rootObj.transform.GetChild(0).gameObject.transform.GetChild(0).gameObject.transform, "LangSw", Data.getMessage(userLang, "btnLangSw"), "LangSw", "", new Vector3(360, 230, 0), new Vector2(360, 60));
+                utility.CreateButton(rootObj.transform.GetChild(0).gameObject.transform.GetChild(0).gameObject.transform, "LangSw", Data.getMessage(userLang, "btnLangSw"), "LangSw", "", new Vector3(400, 230, 0), new Vector2(400, 60));
                 try {
                     txtVR = (GameObject)Instantiate(Resources.Load<GameObject>("VR"));
                     addVR(rootObj, new Vector3(0f, 5, 0));
@@ -455,38 +489,49 @@ public class Main : MonoBehaviour{
                 catch (System.Exception e) { Debug.Log("Can not load VR nodel"); }                
                 trDirect = true;                
                 break;
-            case 1: // show a start test 1 message
+            case 1: // show a select gender message
+                rootObj = utility.ShowGenderMenu(userLang);                
+                trDirect = true;
+                break;
+            case 2: // show a select birthday message
+                rootObj = utility.ShowDigitsKeyboard(userLang, "Birth");
+                trDirect = true;
+                break;
+            case 3: // show a start test 1 message
                 curTestIndex = 0;
                 string msg1 = string.Format(Data.getMessage(userLang, "Test1"), Data.getMessage(userLang, "color_" + testsConfig[curTestIndex, 0]), Data.getMessage(userLang, "obj_" + testsConfig[curTestIndex, 0]));
                 //Debug.Log("Test1=" + msg1);
                 rootObj = utility.ShowMessage(msg1, "Next", Data.getMessage(userLang, "btnStart"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
                 StartCoroutine(utility.rotateText(rootObj, true, 2, "newObj", 0));
+                trDirect = true;
                 break;
-            case 2: // start test 1
+            case 4: // start test 1
                 curTestIndex = 0;
                 rootObj = utility3D.CreateObjsArray(false);
                 isHintDisplay = true;
                 isDisplayTimer = false;
                 break;
-            case 3: // show a start test 2 message
+            case 5: // show a start test 2 message
                 curTestIndex = 1;
                 string msg2 = string.Format(Data.getMessage(userLang, "Test2"), Data.getMessage(userLang, "color_" + testsConfig[curTestIndex, 1]), Data.getMessage(userLang, "obj_" + testsConfig[curTestIndex, 0]), testsConfig[curTestIndex, 5]);
                 rootObj = utility.ShowMessage(msg2, "Next", Data.getMessage(userLang, "btnStart"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
                 utility3D.createTarget(rootObj, testsConfig[0, 1]);
+                trDirect = true;
                 break;
-            case 4: //start test 2 with a time limit
+            case 6: //start test 2 with a time limit
                 curTestIndex = 1;
                 rootObj = utility3D.CreateObjsArray(true);
                 isHintDisplay = true;
                 isDisplayTimer = true;
                 break;
-            case 5: // show a color test start message
+            case 7: // show a color test start message
                 rootObj = utility.ShowMessage(Data.getMessage(userLang, "IntroColTest"), "Next", Data.getMessage(userLang, "btnStart"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
+                trDirect = true;
                 break;
-            case 6: // start color test 
+            case 8: // start color test 
                 //Debug.Log("Start color test "+JsonUtility.ToJson(testData.colorTestResult));
                 if(testData.colorTestResult.selected != null) { testData.colorTestResult.selected.Clear();
-                } else { testData.colorTestResult.selected = new List<int[]>();}
+                } else { testData.colorTestResult.selected = new List<TestAnswer>();}
                 Debug.Log("Start color test " + JsonUtility.ToJson(testData.colorTestResult));
                 testData.colorTestResult.energy = 0;
                 testData.colorTestResult.stress = 0;
@@ -496,14 +541,16 @@ public class Main : MonoBehaviour{
                 GameObject msgObj2 = utility.ShowMessage(Data.getMessage(userLang, "selAllCol"), "", Data.getMessage(userLang, "btnStart"), new Vector2(1200, 200), TextAnchor.MiddleCenter, new Vector2(0, 20));
                 msgObj2.transform.SetParent(rootObj.transform);
                 msgObj2.transform.position = new Vector3(0, 5.4f, 16);
+                trDirect = true;
                 break;
-            case 7: // show a start text test message
+            case 9: // show a start text test message
                 string strTxtIntro = string.Format(Data.getMessage(userLang, "IntroTextTest"), Data.getQuestionsCount(userLang));
-                rootObj = utility.ShowMessage(strTxtIntro, "Next", Data.getMessage(userLang, "btnStart"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40)); 
+                rootObj = utility.ShowMessage(strTxtIntro, "Next", Data.getMessage(userLang, "btnStart"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
+                trDirect = true;
                 break;
-            case 8: // start a text test
+            case 10: // start a text test
                 if (testData.textTestResult.answers != null){testData.textTestResult.answers.Clear();}
-                else { testData.textTestResult.answers = new List<int[]>(); }
+                else { testData.textTestResult.answers = new List<TestAnswer>(); }
                 testData.textTestResult.extra = 0;
                 testData.textTestResult.stabil = 0;
                 testData.textTestResult.totalTime = 0;
@@ -513,8 +560,9 @@ public class Main : MonoBehaviour{
                 testData.textTestResult.Value2 = 0;
                 testData.textTestResult.Power = 0;
                 NextQuestion();
+                trDirect = true;
                 break;
-            case 9: // show results
+            case 11: // show results
                 //testData.colorTestResult.stress = 30;
                 //testData.colorTestResult.energy = 70;
                 //testData.textTestResult.Name1 = "Phlegmatic";
@@ -524,10 +572,13 @@ public class Main : MonoBehaviour{
                 //testData.textTestResult.Power = 50;
                 rootObj = utility.showResult(userLang, testData.colorTestResult.stress, testData.colorTestResult.energy, testData.textTestResult.Name1, testData.textTestResult.Name2, testData.textTestResult.Value1, testData.textTestResult.Value2, testData.textTestResult.Power);
                 StartCoroutine(utility.rotateText(rootObj, true, 2, "", 0));
+                trDirect = true;
+                isTimerShowResult = true;
                 break;
-            case 10: // show a start text test message
+            case 12: // show a start text test message
                 rootObj = utility.ShowMessage(Data.getMessage(userLang, "msgAbout"), "Back", Data.getMessage(userLang, "btnBack"), new Vector2(1200, 600), TextAnchor.MiddleCenter, new Vector2(0, 40));
                 StartCoroutine(utility.rotateText(rootObj, true, 2, "", 0));
+                trDirect = true;
                 break;
             //case 1: // show a keyboard for name input
             //    //rootObj = utility.ShowKeyboard(userLang, "Name");
@@ -550,14 +601,18 @@ public class Main : MonoBehaviour{
     // send data to server
     private void sendDataToServer(){
         isActionSave = false;
-        timerShowResult[0] = 0;
+        isTimerShowResult = false;
         if (testData!=null) { 
             if(testData.snenasMotionData.Count>0){
-                // Debug.Log(testData);
-                // string json = JsonUtility.ToJson(testData);
-                // string dataPath = Path.Combine(Application.persistentDataPath, "CharacterData.txt");
-                // using (StreamWriter streamWriter = File.CreateText("c:\\11\\unityJson.txt")){streamWriter.Write(json);}
-                // Debug.Log(json);
+                if (isNetFile) {
+                    // Debug.Log(testData);
+                    try { 
+                        string json = JsonUtility.ToJson(testData);
+                        string dataPath = Path.Combine(Application.persistentDataPath, "CharacterData.txt");
+                        using (StreamWriter streamWriter = File.CreateText("c:\\11\\unityJson.txt")){streamWriter.Write(json);}
+                        Debug.Log("successful save net data to file");
+                    } catch (System.Exception e) { Debug.Log("Can not save data to file"); }
+                }
                 connection.putDataBlob("/putVrData", testData);
                 initTestData();
                 curSnenaMotionData = new SnenaMotionData() { i = 0, act = new List<UserActivity>() };                        
@@ -567,8 +622,9 @@ public class Main : MonoBehaviour{
 
     private void initTestData(){
         testData = new TestData(){
-            startDateTime = System.DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss"),
+            userStartTime = System.DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss"),
             userData = userData,
+            ipInfo = "",
             snenasMotionData = new List<SnenaMotionData>(),
             rightObjectsList = new List<TestObjects>(),
             selectedObjectsList = new List<TestObjects>(),
@@ -642,14 +698,16 @@ public class Main : MonoBehaviour{
         }
     }
 
-    //private void testConnection(){
-    //    // Test connection module with data from a file
-    //    connection.putDataString("/putTest", "{'test': 'data'}");
-    //    string txtFromFile = "";
-    //    using (StreamReader streamReader = File.OpenText("c:\\11\\unityJson.txt")){txtFromFile = streamReader.ReadToEnd();}
-    //    TestData testData2 =  JsonUtility.FromJson<TestData>(txtFromFile);
-    //    // Debug.Log("Start end");
-    //   connection.putDataBlob("/putVrData", testData2);
-    //}
+    private void testConnection(){
+        // test connection module with data from a file
+        connection.putDataString("/putTest", "{'test': 'data'}");
+        string txtfromfile = "";
+        try { 
+        using (StreamReader streamreader = File.OpenText("c:\\11\\unityjson.txt")) { txtfromfile = streamreader.ReadToEnd(); }
+        TestData testdata2 = JsonUtility.FromJson<TestData>(txtfromfile);
+        Debug.Log("loaded net data \n "+JsonUtility.ToJson(testdata2));            
+            connection.putDataBlob("/putVrData", testdata2);
+        } catch (System.Exception e) { Debug.Log("Can not send data to server"); }
+    }
 
 }

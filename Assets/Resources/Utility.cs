@@ -199,6 +199,71 @@ public class Utility {
         return rootObj;
     }
 
+    public GameObject ShowDigitsKeyboard(string userLang, string Label)
+    { // show digits keyboard input
+        int len = 12; int width = 60; int startPosX = -250; int startPosY = 90; int i = 0; int j = 0;
+        GameObject rootObj = CreateCanvas("rootKeyoard", new Vector3(0, -3, 12), new Vector2(770, 150));
+        GameObject panel = new GameObject("Panel");
+        panel.AddComponent<CanvasRenderer>();
+        Image img = panel.AddComponent<Image>();
+        img.color = new Vector4(1, 1, 1, 1f);
+        img.sprite = uisprite;
+        img.type = Image.Type.Sliced;
+        RectTransform panelTransform = panel.GetComponent<RectTransform>();
+        panel.transform.SetParent(rootObj.transform, true);
+        panelTransform.localScale = new Vector3(1f, 1f, 1f);
+        panelTransform.localPosition = new Vector3(0, 70, 0);
+        panelTransform.sizeDelta = new Vector2(770, 130);
+        Dictionary<string, string> keyDictionary = new Dictionary<string, string>();
+        float delta = 30; 
+        for (i = 0; i < 10; i++){            
+            GameObject btKey = CreateButton(panelTransform, i.ToString(), i.ToString(), "KeyboardDigit", i.ToString(), new Vector3(startPosX + i * (60 + 2) - delta, 0, 0), new Vector2(width, 60));
+            Image imgKey = btKey.GetComponent<Image>();
+            imgKey.color = new Vector4(0.5f, 0.5f, 0.8f, 1);
+        }
+        CreateButton(rootObj.transform, "Del", Data.getMessage(userLang, "btnDelete"), "KeyboardDigit", "DEL", new Vector3(240, 170, 0), new Vector2(220, 60));
+        GameObject InputMsg = new GameObject("InputMsg");
+        InputMsg.transform.SetParent(rootObj.transform);
+        RectTransform brInputMsg = InputMsg.AddComponent<RectTransform>();
+        brInputMsg.localScale = new Vector3(1f, 1f, 1f);
+        brInputMsg.sizeDelta = new Vector2(800, 190);
+        brInputMsg.localPosition = new Vector3(0, 360, 0);
+        Image imgInputMsg = InputMsg.AddComponent<Image>();
+        imgInputMsg.sprite = uisprite;
+        imgInputMsg.color = new Vector4(0.8f, 0.8f, 0.8f, 1);
+        imgInputMsg.type = Image.Type.Sliced;
+        CreateText(brInputMsg, new Vector2(0, 1f), new Vector2(800, 180), Data.getMessage(userLang, "msg" + Label), 40, 1, TextAnchor.MiddleCenter);
+
+        GameObject InputMsg2 = new GameObject("InputMsg2");
+        InputMsg2.transform.SetParent(rootObj.transform);
+        RectTransform brInputMsg2 = InputMsg2.AddComponent<RectTransform>();
+        brInputMsg2.localScale = new Vector3(1f, 1f, 1f);
+        brInputMsg2.sizeDelta = new Vector2(500, 60);
+        brInputMsg2.localPosition = new Vector3(-120, 235, 0);
+        Image imgInputMsg2 = InputMsg2.AddComponent<Image>();
+        imgInputMsg2.sprite = uisprite;
+        imgInputMsg2.color = new Vector4(0.8f, 0.8f, 0.8f, 1);
+        imgInputMsg2.type = Image.Type.Sliced;
+
+        CreateText(brInputMsg2, new Vector2(-160, 0), new Vector2(100, 60), Data.getMessage(userLang, "msgYear"), 40, 1, TextAnchor.MiddleCenter);
+        CreateText(brInputMsg2, new Vector2(0, 0), new Vector2(100, 60), Data.getMessage(userLang, "msgMonth"), 40, 1, TextAnchor.MiddleCenter);
+        CreateText(brInputMsg2, new Vector2(160, 0), new Vector2(100, 60), Data.getMessage(userLang, "msgDay"), 40, 1, TextAnchor.MiddleCenter);
+
+        GameObject Input = new GameObject("Input");
+        Input.transform.SetParent(rootObj.transform);
+        RectTransform brInput = Input.AddComponent<RectTransform>();
+        brInput.localScale = new Vector3(1f, 1f, 1f);
+        brInput.sizeDelta = new Vector2(500, 50);
+        brInput.localPosition = new Vector3(-120, 170, 0);
+        Image imgInput = Input.AddComponent<Image>();
+        imgInput.sprite = uisprite;
+        imgInput.color = new Vector4(0.9f, 0.9f, 0.9f, 1);
+        imgInput.type = Image.Type.Sliced;
+        GameObject InputText = CreateText(brInput, new Vector2(0, -0.5f), new Vector2(400, 50), "XX         XX         XX", 40, 1, TextAnchor.MiddleCenter);
+        main.TextInput = InputText.GetComponent<Text>();
+        return rootObj;
+    }
+
     // select dialog object
     public GameObject ShowDialog(string msg, string notes, string action, string actionLabel0, string actionLabel1, Vector2 size, TextAnchor anchor, Vector2 startLoc){
         //logDebug("ShowMessage");
@@ -371,7 +436,7 @@ public class Utility {
         }
         enableAction(gm, true);
         if (nextAnimation != "") { main.startNewAnimation(nextAnimation,index); }
-        main.trDirect = true;
+        //main.trDirect = true;
         Debug.Log("Animation is completed");
     }
 
@@ -392,4 +457,11 @@ public class Utility {
         return rootObj;    
     }
 
+    public GameObject ShowGenderMenu(string userLang){
+        GameObject rootObj = ShowMessage(Data.getMessage(userLang, "msgGender"), "", "", new Vector2(1200, 150), TextAnchor.MiddleCenter, new Vector2(0, 0));
+        CreateButton(rootObj.transform.GetChild(0).gameObject.transform.GetChild(0).gameObject.transform, "Male", Data.getMessage(userLang, "btnMale"), "GenderSwMenu", "", new Vector3(-200, -150, 0), new Vector2(300, 65));
+        CreateButton(rootObj.transform.GetChild(0).gameObject.transform.GetChild(0).gameObject.transform, "Female", Data.getMessage(userLang, "btnFemale"), "GenderSwMenu", "", new Vector3(200, -150, 0), new Vector2(300, 65));
+        CreateButton(rootObj.transform.GetChild(0).gameObject.transform.GetChild(0).gameObject.transform, "Unknown", Data.getMessage(userLang, "btnUnknown"), "GenderSwMenu", "", new Vector3(0, -250, 0), new Vector2(600, 65));        
+        return rootObj;
+    }
 }

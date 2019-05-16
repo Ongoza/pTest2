@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Data {
     public static string getVersion() {
-        return "0.8";
+        return "0.9";
     }
 
     private static readonly Dictionary<string, string> connectionData = new Dictionary<string, string>() {
@@ -78,6 +78,14 @@ public class Data {
         , {"btnLangSw","Change language" }
         , {"msgLangSw","Select language" }
         , {"msgAbout", "This program was developed in the project www.ongoza.com as psychological tests transfering to virtual reality."}
+        , {"btnMale","Male" }
+        , {"btnFemale","Female" }
+        , {"btnUnknown","Prefer not to answer" }
+        , {"msgYear","Year" }
+        , {"msgMonth","Month" }
+        , {"msgDay","Day" }
+        , {"btnDelete","Delete" }
+
     };
 
     private static readonly Dictionary<string, string> MessagesSp = new Dictionary<string, string>() {
@@ -133,9 +141,16 @@ public class Data {
         ,{"btnBack","Volver"}
         ,{"btnNext","Siguiente"}
         ,{"btnStart","Comenzar"}
-        ,{"btnLangSw","Cambiar idioma" }
-        ,{"msgLangSw","Seleccione el idioma" }
+        ,{"btnLangSw","Change language" }
+        ,{"msgLangSw","Select language" }
         ,{"msgAbout","Este programa se desarrolló en el proyecto www.ongoza.com sobre la transferencia de pruebas psicológicas a la realidad virtual"}
+        , {"btnMale","Masculina" }
+        , {"btnFemale","Hembra" }
+        , {"btnUnknown","Prefiero no responder" }
+        , {"msgYear","Año" }
+        , {"msgMonth","Mes" }
+        , {"msgDay","Día" }
+        , {"btnDelete","Сancelar" }
     };
 
     private static readonly Dictionary<string, string> MessagesRu = new Dictionary<string, string>() {
@@ -191,9 +206,16 @@ public class Data {
         ,{"btnBack","Вернуться"}
         ,{"btnNext","Далее"}
         ,{"btnStart","начать"}
-        ,{"btnLangSw","Сменить язык" }
-        ,{"msgLangSw","Выберите язык" }
+        ,{"btnLangSw","Change language" }
+        ,{"msgLangSw","Select language" }
         ,{"msgAbout","Эта программа разработана в ракмах проекта www.ongoza.com по переносу психологических тестов в виртуальную реальность."}
+        ,{"btnMale","Мужской" }
+        ,{"btnFemale","Женский" }
+        ,{"btnUnknown","Предпочитаю не ответить" }
+        ,{"msgYear","Год" }
+        ,{"msgMonth","Месяц" }
+        ,{"msgDay","День" }
+        ,{"btnDelete","Удалить" }
     };
 
     private static readonly Dictionary<string, string> KeyList = new Dictionary<string, string>() {
