@@ -26,20 +26,20 @@ public class Utility {
             }
             else { Debug.Log("Can't find a debug obj");}
         } else{ Debug.Log("VR Debug off");}
-        Debug.Log("VR Debug is ="+ isDebug+" ="+ isVRLog);
-        logDebug("Utility init");
+        //Debug.Log("VR Debug is ="+ isDebug+" ="+ isVRLog);
+        logDebug(" Ver "+Data.getVersion());
         try { 
             defaultFont = Font.CreateDynamicFontFromOSFont("Roboto", 1);       
-            logDebug("Utility init 2");
+            //logDebug("Utility init 2");
         }catch (System.Exception e){Debug.Log("Can not load font");}
         Texture2D tex = new Texture2D(128, 128);
         // uisprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
         try{ uisprite = Resources.Load<Sprite>("button");
         }catch (System.Exception e){Debug.Log("Can not load sprite for button");}
-        logDebug("Utility init 3");
+        //logDebug("Utility init 3");
         try{ matFont = Resources.Load<Material>("matOver");
         }catch (System.Exception e){Debug.Log("Can not load mterial for font");}
-        logDebug("Utility init 5");
+        logDebug("ok");
 
         //Debug.Log(matFont);
 

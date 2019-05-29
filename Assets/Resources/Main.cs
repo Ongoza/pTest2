@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 //using System.Collections;
 
 using System.IO; //save to file
-// add birth and gender
+// flip array on wrong device orientation
 // Проверить сетевые функции 
 // андроид и аппл
 
@@ -13,10 +13,11 @@ public class Main : MonoBehaviour{
     // global variables
     private int curScene = 0; //  start scene index 
     private bool isDebug = false; // VR debug enable
-    private bool isNet = false; // network enable
-    private bool isNetFile = true; // save network data to file
+    private bool isNet = true; // network enable
+    private bool isNetFile = false; // save network data to file
     private bool sendDatafromFile = false; // send data to server from local file
 
+    private float deviceOrientation = 0f; // left or right device headset orientation
     private float[] trackingTime = new float[] { 30f, 0f }; // [0] time in sec while moving are recording for each action, [1] - current timer
     private bool isTimerShowResult = false; // timer in sec how long user read results [trigger,default,current] before send data to server
     private float[] userSceneDataTime = new float[] { 0.0f,0f} ; // [0] timer for scena, [1] timer for action
@@ -66,6 +67,7 @@ public class Main : MonoBehaviour{
     private bool isDisplayTimer = false;// display timer during a test
     public float testTime;// test time left
     public Text hintText; //overlay hint text
+    //private Text runText; //overlay runtime data text debug
     public GameObject TimerCanvas; // timer object
     private Utility utility;
     private Utility3D utility3D;
@@ -87,11 +89,12 @@ public class Main : MonoBehaviour{
         #endif
 
         GameObject ObjEventSystem = GameObject.Find("GvrEventSystem");
+        //runText = GameObject.Find("run").GetComponent<Text>();
         if (ObjEventSystem){
             SceneEventSystem = ObjEventSystem.GetComponent<EventSystem>();
-            if (SceneEventSystem) { SceneEventSystem.enabled = false; }
+           // if (SceneEventSystem) { SceneEventSystem.enabled = false; }
         } else { Debug.Log("Can not find Event System"); }
-        Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = false;
+       // Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = false;
         GameObject camTimedPointer = GameObject.Find("GvrReticlePointer");
         timedPointer = camTimedPointer.GetComponent<Renderer>().material;       
         string lng = Application.systemLanguage.ToString();
@@ -103,9 +106,11 @@ public class Main : MonoBehaviour{
         camFade = GameObject.Find("camProtector");
         connection = new Connection(Data.getConnectionData()["ServerIP"] + ":" + Data.getConnectionData()["ServerPort"], isNet, utility);
         string deviceDesc = "";
-        try{deviceDesc = "#_" + SystemInfo.deviceModel + ",#_" + SystemInfo.deviceType + ",#_" + SystemInfo.deviceName + ",#_" + SystemInfo.operatingSystem;
+        
+        try
+        {deviceDesc = "#_" + SystemInfo.deviceModel + ",#_" + SystemInfo.deviceType + ",#_" + SystemInfo.deviceName + ",#_" + SystemInfo.operatingSystem;
         }catch (System.Exception e) { Debug.Log(e); }
-        Debug.Log("deviceDesc: " + deviceDesc + connection.deviceUUID);
+        //Debug.Log("deviceDesc: " + deviceDesc + connection.deviceUUID);
         //utility.logDebug("Init");
         userData = new UserData(){name = "", email = "", birth = "", gender = "",
             input = Input.touchSupported.ToString(),
@@ -124,10 +129,12 @@ public class Main : MonoBehaviour{
         initTestData();
         if (sendDatafromFile) { testConnection(); }
         //Debug.Log("start "+trDirect);
-        if (checkGyro > 0){ StartCoroutine(utility.FadeScene(1f, true, new Color(0.2f, 0.2f, 0.2f, 1), checkGyro));} else {
+        if (checkGyro > 0){
+            StartCoroutine(utility.FadeScene(1f, true, new Color(0.2f, 0.2f, 0.2f, 1), checkGyro));
+        } else {
             //StartCoroutine(utility.PauseInit(7,0));
             rootObj = utility.ShowMessage(Data.getMessage(userLang, "gyroWarn"), "Next", Data.getMessage(userLang, "btnStart"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
-            Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = true;
+           // Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = true;
             SceneEventSystem.enabled = true;
             curScene = -1;
         }
@@ -142,16 +149,17 @@ public class Main : MonoBehaviour{
         //    Application.Quit();
         //}
         if (trDirect){ // show array to a text message
-            float a = 0;
+            float a = 0; float b = 0;
             float y = Camera.main.transform.eulerAngles.y;
-            //float z = Camera.main.transform.eulerAngles.x;
-            if (y > 50 && y < 310){
-                if(y > 180) { a = 0.01f;
-                } else { a = 180; }
-            }
-            if (a != 0 ) { showArrow(a); } else {if (gmArrow) { gmArrow.SetActive(false); }}
+            float z = Camera.main.transform.eulerAngles.z;            
+            if (y > 50 && y < 310){ if(y > 180) { a = 0.01f;} else { a = 180; }}
+            if (a != 0 ) {
+                if (z > 120 && z < 240) { b = 180; } // flip if device has a wrong orientation
+                gmArrow.transform.localEulerAngles = new Vector3(0, a, b);
+                gmArrow.SetActive(true);
+            } else {if (gmArrow) { gmArrow.SetActive(false); }}
         }
-        if(animVR){if(txtVR){txtVR.transform.Rotate(Vector3.back, 1);}}
+        if(animVR){if (txtVR){txtVR.transform.Rotate(Vector3.back, 1);}}
         userSceneDataTime[0] += Time.deltaTime;
         userSceneDataTime[1] += Time.deltaTime;
         if(isActionSave) {
@@ -218,6 +226,7 @@ public class Main : MonoBehaviour{
     // on the cusror over an active object in a scena
     public void OnEnterTimed(string type, string name, bool isButton){
         Debug.Log("onEnterTimed main " + name + "=" + type+" butt="+ isButton);
+        utility.logDebug("EnterTimed");
         isTimer = true;
         workTime = defaultTime;
         if (timedPointer) { timedPointer.SetFloat("_Angle", 0); }
@@ -247,6 +256,7 @@ public class Main : MonoBehaviour{
     // on the cusror move out of over an active object in a scena
     public void OnExitTimed(){
         Debug.Log("ExitTimed main");
+        utility.logDebug("ExitTimed");
         isTimer = false;
         curfocusObj = "";
         curfocusType = "";
@@ -262,6 +272,7 @@ public class Main : MonoBehaviour{
     private void ClickSelectEvent(){
         isTimer = false;       
         Debug.Log("clickSelectEvent=" + curfocusType + "="+ curfocusObj);
+        utility.logDebug("ClickTimed");
         switch (curfocusType) {
             case "Next": // start next scena
                 GameObject model = GameObject.Find("Model");
@@ -457,14 +468,15 @@ public class Main : MonoBehaviour{
 
     // switch between scenas
     public void NextScene(int delta){ // switch scenes  
-        utility.logDebug("NextScene cur="+ curScene +" delta="+ delta);
+        //utility.logDebug("NextScene cur="+ curScene +" delta="+ delta);
+        utility.logDebug("Next");
         isActionSave = false;
         isHintDisplay = false;
         isDisplayTimer = false;
         animVR = false;
         trDirect = false;
         SceneEventSystem.enabled = false;        
-        Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = false;
+        //Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = false;
        // Debug.Log("curScene=" + curScene +" delta="+ delta+" "+ JsonUtility.ToJson(curSnenaMotionData));
         if (delta > 0){ testData.snenasMotionData.Add(curSnenaMotionData);}        
         curScene += delta;
@@ -688,14 +700,6 @@ public class Main : MonoBehaviour{
         }
         catch (System.Exception e) { Debug.Log("Can not add to scena VR nodel"); }
         return txtVR;
-    }
-
-    private void showArrow(float y) {
-        if (gmArrow) {
-            gmArrow.transform.localEulerAngles = new Vector3(0,y,0);
-            gmArrow.SetActive(true);
-            Debug.Log("y="+y);
-        }
     }
 
     private void testConnection(){

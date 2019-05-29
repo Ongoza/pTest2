@@ -4,12 +4,12 @@ using UnityEngine;
 
 public class Data {
     public static string getVersion() {
-        return "0.9";
+        return "0.982";
     }
 
     private static readonly Dictionary<string, string> connectionData = new Dictionary<string, string>() {
-        { "ServerIP", "127.0.0.1" }
-       // { "ServerIP", "192.168.1.100" }
+       // { "ServerIP", "127.0.0.1" }
+        { "ServerIP", "192.168.43.253" }
        // { "ServerIP", "91.212.177.22" }
         ,{ "ServerPort", "8888" }
     };

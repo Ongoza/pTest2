@@ -133,7 +133,7 @@ public class Utility3D{
         canExit.transform.SetParent(rootObj.transform);
         utility.CreateButton(canExit.transform, "btExit", "Exit", "Next", "0_10_10", new Vector3(0, 0, 0), new Vector2(100, 50));
         canExit.transform.Rotate(Vector3.left, -60);
-        Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = true;
+       // Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = true;
         // Create hint for a tested person
         main.TimerCanvas = new GameObject("Hint");
         Canvas c = main.TimerCanvas.AddComponent<Canvas>();

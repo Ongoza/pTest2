@@ -18,7 +18,7 @@ public class Connection{
         serverUrl = serverString;
         connEnable = isEnable;
         Utility utility = util;
-        utility.logDebug("Connection");
+        utility.logDebug("Conn");
         deviceUUID = SystemInfo.deviceUniqueIdentifier.ToString();
         //FB.Init(InitCallback);
     }
