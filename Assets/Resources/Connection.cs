@@ -44,7 +44,7 @@ public class Connection{
             try{
                 byte[] data = (byte[])e.Result;
                 string reply = System.Text.Encoding.UTF8.GetString(data);
-                Debug.Log("!!!!!Upload result: " + reply);
+                //Debug.Log("!!!!!Upload result: " + reply);
             } catch (System.Exception ee) { Debug.Log("!!!!!Upload data error: " + ee); }
         }
     }
@@ -59,7 +59,11 @@ public class Connection{
                 byte[] byteDocs = Encoding.UTF8.GetBytes(JsonUtility.ToJson(data));
                 client.UploadDataCompleted += new UploadDataCompletedEventHandler(UploadBlobResult);
                 client.UploadDataAsync(new System.Uri(uriStr), "POST", byteDocs);
-            } catch (System.Exception e) { Debug.Log("Connection error: " + e); }
+                
+                Debug.Log("Start Uploading result");
+            } catch (System.Exception e) {
+                Debug.Log("Connection error: " + e);
+            }
         }
     }
 

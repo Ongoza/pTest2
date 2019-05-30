@@ -302,7 +302,7 @@ public class Utility {
         Sprite sprite = Sprite.Create(tex2, new Rect(0.0f, 0.0f, 600, 100), new Vector2(300f, 300f), 100.0f);
         //Sprite spriteBack = Sprite.Create(tex2, new Rect(0.0f, 0.0f, 600, 100), new Vector2(300f, 300f), 100.0f);
         string sValue = value.ToString();
-        CreateText(gm.transform, new Vector2(750, 10), new Vector2(1000, 70), label+":", 60, 0, TextAnchor.LowerRight);
+        CreateText(gm.transform, new Vector2(820, 10), new Vector2(1000, 70), label+":", 60, 0, TextAnchor.LowerRight);
         // drow background
         GameObject gm1 = new GameObject(name+"_back");
         gm1.transform.position = new Vector3(-120, 0, 0);
@@ -331,6 +331,7 @@ public class Utility {
         gm2.GetComponent<RectTransform>().sizeDelta = new Vector2(700, 70);
         //+
         CreateText(gm2.transform, new Vector2(-450, 10), new Vector2(1000, 70), sValue + "%", 60, 0, TextAnchor.LowerLeft);
+        CreateButton(gm.transform, "?"+name,"?", "ShowHelp", name+"_"+value, new Vector3(280, 0, 0), new Vector2(65, 65));
         return gm;
     }
 
@@ -358,9 +359,9 @@ public class Utility {
         progressBar(name2, Data.getMessage(userLang, name2), value2, new Vector2(-150, -200), panelTransform);
         progressBar("power", Data.getMessage(userLang, "Power"), value3, new Vector2(-150, -300), panelTransform);
 
-        CreateButton(panelTransform, "Button0", Data.getMessage(userLang, "btnExit"), "Exit", "0", new Vector3(100-size.x / 2, 20 - size.y, 0), new Vector2(300, 65));
-        CreateButton(panelTransform, "Button1", Data.getMessage(userLang, "btnRepeat"), "Repeat", "0", new Vector3(0, 20 - size.y, 0), new Vector2(300, 65));
-        CreateButton(panelTransform, "Button2", Data.getMessage(userLang, "btnAbout"), "Next", "0", new Vector3(-100 + size.x / 2, 20 - size.y, 0), new Vector2(300, 65));
+        CreateButton(panelTransform, "btnExit", Data.getMessage(userLang, "btnExit"), "Exit", "0", new Vector3(100-size.x / 2, 20 - size.y, 0), new Vector2(300, 65));
+        CreateButton(panelTransform, "btnRepeat", Data.getMessage(userLang, "btnRepeat"), "Repeat", "0", new Vector3(0, 20 - size.y, 0), new Vector2(300, 65));
+        CreateButton(panelTransform, "btnAbout", Data.getMessage(userLang, "btnAbout"), "Next", "0", new Vector3(-100 + size.x / 2, 20 - size.y, 0), new Vector2(300, 65));
 
         return newCanvas;
     }

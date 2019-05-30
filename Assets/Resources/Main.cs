@@ -4,19 +4,19 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 //using System.Collections;
 
-using System.IO; //save to file
-// flip array on wrong device orientation
+//using System.IO; //save to file
 // Проверить сетевые функции 
 // андроид и аппл
 
 public class Main : MonoBehaviour{
     // global variables
-    private int curScene = 0; //  start scene index 
+    private int curScene = 11; //  start scene index 
     private bool isDebug = false; // VR debug enable
-    private bool isNet = true; // network enable
+    private bool isNet = false; // network enable
     private bool isNetFile = false; // save network data to file
     private bool sendDatafromFile = false; // send data to server from local file
 
+    private bool dataSended = false; //if data already sended to server
     private float deviceOrientation = 0f; // left or right device headset orientation
     private float[] trackingTime = new float[] { 30f, 0f }; // [0] time in sec while moving are recording for each action, [1] - current timer
     private bool isTimerShowResult = false; // timer in sec how long user read results [trigger,default,current] before send data to server
@@ -78,6 +78,7 @@ public class Main : MonoBehaviour{
     private int curQuestionKey; // curent question key 
     private int questionsCount; // total number of questions
     private GameObject txtVR; // animation object in intro
+    private GameObject modalWindow; // modal window object
 
     void Start(){
         int checkGyro = 0; trDirect = false;
@@ -186,15 +187,11 @@ public class Main : MonoBehaviour{
                     if (curAction[i] != lastAction[i]) { trNewData = true; break; }
                 }
                 if (trNewData){
-                    //Debug.Log("0 curAction = " + string.Join(";", curAction)+ "0 lastAction = " + string.Join(";", lastAction));
                     curSnenaMotionData.act.Add(new UserActivity { t = Mathf.RoundToInt(userSceneDataTime[0] * 1000), a = curAction });
-                    //Debug.Log("1 curAction = " + JsonUtility.ToJson(curSnenaMotionData.userActivities));
                     for (int i = 0; i < curAction.Length; i++) { lastAction[i] = curAction[i]; }
                 }
-            } else { // limit time actions recording
-                Debug.Log("reach a records time limit "+ trackingTime);
-                if (isTimerShowResult){sendDataToServer();};
-                isActionSave = false;
+            } else { isActionSave = false;// limit time actions recording
+               // Debug.Log("reach a records time limit "+ trackingTime);               
             }
         }
         if (isTimer){ // display selecting pointer
@@ -215,12 +212,6 @@ public class Main : MonoBehaviour{
                 }
             }
         }
-        //if(timerShowResult[0] > 0){
-        //    // send data to server after waiting 
-        //    Debug.Log("Send data to server " + timerShowResult[2]);
-        //    if (timerShowResult[2] > 0) { timerShowResult[2]--;
-        //    }else{ sendDataToServer();}
-        //}
     }
 
     // on the cusror over an active object in a scena
@@ -346,10 +337,16 @@ public class Main : MonoBehaviour{
                 userData.email = TextInput.text;
                 StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScene", 1));
                 break;
-            case "Exit": // exit from app
-                sendDataToServer();
-                Application.Quit();
-                break;
+            case "Exit": Application.Quit(); break; // exit from app
+            case "CloseHelp": if (modalWindow) { GameObject.Destroy(modalWindow); }; rootObj.SetActive(true); break;
+            case "ShowHelp":
+                Debug.Log(curfocusObj);
+                rootObj.SetActive(false);
+                if (modalWindow) { GameObject.Destroy(modalWindow); }
+                string[] arrNameHelp = curfocusObj.Split('_');
+                string msgHelp = string.Format(Data.getMessage(userLang, "dsc" + arrNameHelp[0]), arrNameHelp[1]);
+                modalWindow = utility.ShowMessage(msgHelp, "CloseHelp", Data.getMessage(userLang, "btnClose"), new Vector2(1400, 700), TextAnchor.MiddleCenter, new Vector2(0, 40));
+                break; // exit from app
             case "selOneCol": // select only one color
                 StartCoroutine(colorTest.FadeTo(GameObject.Find("b_" + curfocusObj)));
                 int colorIndex = 0;
@@ -377,7 +374,8 @@ public class Main : MonoBehaviour{
                     testData.colorTestResult.energy = Mathf.RoundToInt(100 * (e - 9) / 12);
                     testData.colorTestResult.totalTime = Mathf.RoundToInt(userSceneDataTime[0] * 1000);
                     //Debug.Log("Color test result= " + JsonUtility.ToJson(testData.colorTestResult));
-                    StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScene", 1));
+
+                    StartCoroutine(utility.rotateText(rootObj, false, 5, "NextScene", 1));
                 }
                 break;
             case "NextQuestion": // text test action
@@ -439,7 +437,11 @@ public class Main : MonoBehaviour{
                     testData.textTestResult.Value1 = Mathf.RoundToInt(100 * pTypeValue[0]);
                     testData.textTestResult.Name2 = pTypeName[1];
                     testData.textTestResult.Value2 = Mathf.RoundToInt(100 * pTypeValue[1]);
-                    Debug.Log("item = " + JsonUtility.ToJson(testData.textTestResult));
+                    //Debug.Log("item = " + JsonUtility.ToJson(testData.textTestResult));
+                    isActionSave = false;
+                    testData.snenasMotionData.Add(curSnenaMotionData);
+                    sendDataToServer();
+                    dataSended = true;                    
                     StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScene", 1));
                 }
                 break;
@@ -456,8 +458,10 @@ public class Main : MonoBehaviour{
                 break;
             case "Back": StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScene", -1)); break;
             case "Repeat": // repeat all tests
-                sendDataToServer();
+                initTestData();
+                curSnenaMotionData = new SnenaMotionData() { i = 0, act = new List<UserActivity>() };                
                 curScene = 3;
+                dataSended = false;
                 NextScene(0);
                 break;
             default: Debug.Log("clickSelectEvent not found action for " + name); break;
@@ -469,7 +473,7 @@ public class Main : MonoBehaviour{
     // switch between scenas
     public void NextScene(int delta){ // switch scenes  
         //utility.logDebug("NextScene cur="+ curScene +" delta="+ delta);
-        utility.logDebug("Next");
+        //utility.logDebug("Next");
         isActionSave = false;
         isHintDisplay = false;
         isDisplayTimer = false;
@@ -477,11 +481,13 @@ public class Main : MonoBehaviour{
         trDirect = false;
         SceneEventSystem.enabled = false;        
         //Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = false;
-       // Debug.Log("curScene=" + curScene +" delta="+ delta+" "+ JsonUtility.ToJson(curSnenaMotionData));
-        if (delta > 0){ testData.snenasMotionData.Add(curSnenaMotionData);}        
+       // Debug.Log("curScene=" + curScene +" delta="+ delta+" "+ JsonUtility.ToJson(curSnenaMotionData));                
         curScene += delta;
-        curfocusObjCode = new int[11] { -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-        curSnenaMotionData = new SnenaMotionData(){i = curScene, act = new List<UserActivity>()};
+        if (!dataSended) {
+            if (delta > 0) { testData.snenasMotionData.Add(curSnenaMotionData); }
+            curfocusObjCode = new int[11] { -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            curSnenaMotionData = new SnenaMotionData(){i = curScene, act = new List<UserActivity>()};
+        }
         if (rootObj) { Destroy(rootObj);}
         if (TimerCanvas) { Destroy(TimerCanvas);}
         switch (curScene){
@@ -560,28 +566,13 @@ public class Main : MonoBehaviour{
                 rootObj = utility.ShowMessage(strTxtIntro, "Next", Data.getMessage(userLang, "btnStart"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
                 trDirect = true;
                 break;
-            case 10: // start a text test
-                if (testData.textTestResult.answers != null){testData.textTestResult.answers.Clear();}
-                else { testData.textTestResult.answers = new List<TestAnswer>(); }
-                testData.textTestResult.extra = 0;
-                testData.textTestResult.stabil = 0;
-                testData.textTestResult.totalTime = 0;
-                testData.textTestResult.Name1 = "";
-                testData.textTestResult.Name2 = "";
-                testData.textTestResult.Value1 = 0;
-                testData.textTestResult.Value2 = 0;
-                testData.textTestResult.Power = 0;
+            case 10: // start a text test                
+                initTable();                
                 NextQuestion();
                 trDirect = true;
                 break;
             case 11: // show results
-                //testData.colorTestResult.stress = 30;
-                //testData.colorTestResult.energy = 70;
-                //testData.textTestResult.Name1 = "Phlegmatic";
-                //testData.textTestResult.Name2 =  "Sanguine";
-                //testData.textTestResult.Value1 = 70;
-                //testData.textTestResult.Value2 = 90; 
-                //testData.textTestResult.Power = 50;
+                initTable(); // for test only!!
                 rootObj = utility.showResult(userLang, testData.colorTestResult.stress, testData.colorTestResult.energy, testData.textTestResult.Name1, testData.textTestResult.Name2, testData.textTestResult.Value1, testData.textTestResult.Value2, testData.textTestResult.Power);
                 StartCoroutine(utility.rotateText(rootObj, true, 2, "", 0));
                 trDirect = true;
@@ -592,43 +583,45 @@ public class Main : MonoBehaviour{
                 StartCoroutine(utility.rotateText(rootObj, true, 2, "", 0));
                 trDirect = true;
                 break;
-            //case 1: // show a keyboard for name input
-            //    //rootObj = utility.ShowKeyboard(userLang, "Name");
-            //    break;
-            //case 2: // show a keyboard for email input
-            //        // rootObj = utility.ShowKeyboard(userLang, "Email");
-            //    break;
             default: Debug.Log("Not Found current scene index"); break;
         }
         userSceneDataTime[0] = 0f;
         userSceneDataTime[1] = 0f;
         trackingTime[1] = 0f;
         SceneEventSystem.enabled = true;
-        isActionSave = true;
+        if (!dataSended) { isActionSave = true; }
     }
 
-    // on the app stop
-    private void OnDisable(){ sendDataToServer();}
+    private void initTable() {
+        if (testData.textTestResult.answers != null) { testData.textTestResult.answers.Clear(); }
+        else { testData.textTestResult.answers = new List<TestAnswer>(); }
+        testData.textTestResult.extra = 0;
+        testData.textTestResult.stabil = 0;
+        testData.textTestResult.totalTime = 0;
+        testData.textTestResult.Name1 = "Phlegmatic";
+        testData.textTestResult.Name2 = "Melancholic";
+        testData.textTestResult.Value1 = 0;
+        testData.textTestResult.Value2 = 0;
+        testData.textTestResult.Power = 0;
+    }
 
     // send data to server
     private void sendDataToServer(){
+        Debug.Log("start sending data to the server");
         isActionSave = false;
         isTimerShowResult = false;
         if (testData!=null) { 
             if(testData.snenasMotionData.Count>0){
                 if (isNetFile) {
-                    // Debug.Log(testData);
                     try { 
-                        string json = JsonUtility.ToJson(testData);
-                        string dataPath = Path.Combine(Application.persistentDataPath, "CharacterData.txt");
-                        using (StreamWriter streamWriter = File.CreateText("c:\\11\\unityJson.txt")){streamWriter.Write(json);}
-                        Debug.Log("successful save net data to file");
-                    } catch (System.Exception e) { Debug.Log("Can not save data to file"); }
+                        //string json = JsonUtility.ToJson(testData);
+                        //string dataPath = Path.Combine(Application.persistentDataPath, "CharacterData.txt");
+                        //using (StreamWriter streamWriter = File.CreateText("c:\\11\\unityJson.txt")){streamWriter.Write(json);}
+                        //Debug.Log("successful save data to file");
+                    } catch (System.Exception e) { Debug.Log("Can not save data to a file"); }
                 }
                 connection.putDataBlob("/putVrData", testData);
-                initTestData();
-                curSnenaMotionData = new SnenaMotionData() { i = 0, act = new List<UserActivity>() };                        
-            }else{Debug.Log("No data send to server");}
+            } else{Debug.Log("No data send to server");}
         }
     }
 
@@ -704,14 +697,15 @@ public class Main : MonoBehaviour{
 
     private void testConnection(){
         // test connection module with data from a file
-        connection.putDataString("/putTest", "{'test': 'data'}");
-        string txtfromfile = "";
-        try { 
-        using (StreamReader streamreader = File.OpenText("c:\\11\\unityjson.txt")) { txtfromfile = streamreader.ReadToEnd(); }
-        TestData testdata2 = JsonUtility.FromJson<TestData>(txtfromfile);
-        Debug.Log("loaded net data \n "+JsonUtility.ToJson(testdata2));            
-            connection.putDataBlob("/putVrData", testdata2);
-        } catch (System.Exception e) { Debug.Log("Can not send data to server"); }
+        //connection.putDataString("/putTest", "{'test': 'data'}");
+        connection.putDataBlob("/putVrData", testData);
+        //string txtfromfile = "";
+        //try { 
+        //using (StreamReader streamreader = File.OpenText("c:\\11\\unityjson.txt")) { txtfromfile = streamreader.ReadToEnd(); }
+        //TestData testdata2 = JsonUtility.FromJson<TestData>(txtfromfile);
+        //Debug.Log("loaded net data \n "+JsonUtility.ToJson(testdata2));            
+        //    connection.putDataBlob("/putVrData", testdata2);
+        //} catch (System.Exception e) { Debug.Log("Can not send data to server"); }
     }
 
 }

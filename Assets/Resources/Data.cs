@@ -25,67 +25,75 @@ public class Data {
     private static readonly Dictionary<string, string> MessagesEn = new Dictionary<string, string>() {
         {"Intro", "<size=80><b>Test: determination of temperament (4 parts)</b></size>"}
         ,{ "gyroWarn", "Your device does not have a gyroscope.\nTry selecting the <Next> button."}
-        , {"selOneCol", "<b>Choose the most pleasant color</b>"}
-        , {"selAllCol", "<b>Choose one by one the colors you like most</b>"}
-        , {"Gyro", "Sorry \nYour device does not have a gyroscope."} 
-        , {"msgEmail", "<b>Enter your email.</b> \n <size=40> A link to the end of the test will be sent to this address.</size>"}
-        , {"msgName", "<b>Enter your name.</b>"}
-        , {"msgBirth", "<b>Enter your date of birth.</b>"}
-        , {"msgGender", "<b>Specify your gender.</b>"}
-        , {"Test1", "Test 1/4. Find all <b>{0} {1}</b> around you. \n <size=40>After the execution, press the <Exit> button below.</size> "}
-        , {"Test_hint", "Find <b> {0} {1} </b>. <B> {2}/{3}</b>"}
-        , {"Test2", "Test 2/4. Find all <b> {0} {1}</b> around you \n\n for <b>{2}</b> seconds." }
-        , {"Test_timer", "\n <b> {0} sec left </b>"}
-        , {"Result", "<size=80><b>Your results:</b></size>\n\n" +
+        ,{"selOneCol", "<b>Choose the most pleasant color</b>"}
+        ,{"selAllCol", "<b>Choose one by one the colors you like most</b>"}
+        ,{"Gyro", "Sorry \nYour device does not have a gyroscope."} 
+        ,{"msgEmail", "<b>Enter your email.</b> \n <size=40> A link to the end of the test will be sent to this address.</size>"}
+        ,{"msgName", "<b>Enter your name.</b>"}
+        ,{"msgBirth", "<b>Enter your date of birth.</b>"}
+        ,{"msgGender", "<b>Specify your gender.</b>"}
+        ,{"Test1", "Test 1/4. Find all <b>{0} {1}</b> around you. \n <size=40>After the execution, press the <Exit> button below.</size> "}
+        ,{"Test_hint", "Find <b> {0} {1} </b>. <B> {2}/{3}</b>"}
+        ,{"Test2", "Test 2/4. Find all <b> {0} {1}</b> around you \n\n for <b>{2}</b> seconds." }
+        ,{"Test_timer", "\n <b> {0} sec left </b>"}
+        ,{"Result", "<size=80><b>Your results:</b></size>\n\n" +
         "<b>Test 1</b>: you found <b>{0}</b> objects from {1}\n" +
         "<b>Test 2</b>: you found <b>{2}</b> objects from {3} for <b>{4}</b> seconds.\n\n" +
         "<size=50> The final part of the test is available at www.ongoza.com</size>"}
-        , {"color_0", "gray"}
-        , {"color_1", "blue"}
-        , {"color_2", "green"}
-        , {"color_3", "red"}
-        , {"color_4", "yellow"}
-        , {"color_5", "magenta"}
-        , {"color_6", "brown"}
-        , {"color_7", "black"}
-        , {"obj_0", "cubes"}
-        , {"obj_1", "spheres"}
-        , {"obj_2", "capsules"}
-        , {"obj_3", "cylinders"}
-        , {"obj_4", "pyramids"}
-        , {"start", "Start"}
-        , {"next", "Next"}
-        , {"yes", "Yes"}
-        , {"not", "No"}
-        , {"IntroColTest", "Test 3/4. Choose the colors that you like one by one."}
-        , {"IntroTextTest", "Test 4/4. Answer <Yes> or <No> to {0} questions."}
-        , {"Res_C", "<b> Your current state:</b>"}
-        , {"Res_C_S", "Stress Level"}
-        , {"Res_C_E", "Concentration"}
-        , {"Res_T", "<b> Your temperament:</b>"}
-        , {"Phlegmatic", "Phlegmatic on"}
-        , {"Sanguine", "Sanguine on"}
-        , {"Melancholic", "Melancholic on"}
-        , {"Choleric", "Choleric on"}
-        , {"Power", "Stability"}
-        , {"btnExit", "Exit"}
-        , {"btnAbout", "About"}
-        , {"btnRepeat", "Repeat"}
-        , {"btnMore", "More ..."}
-        , {"btnBack", "Return"}
-        , {"btnNext", "Next"}
-        , {"btnStart", "Start"}
-        , {"btnLangSw","Change language" }
-        , {"msgLangSw","Select language" }
-        , {"msgAbout", "This program was developed in the project www.ongoza.com as psychological tests transfering to virtual reality."}
-        , {"btnMale","Male" }
-        , {"btnFemale","Female" }
-        , {"btnUnknown","Prefer not to answer" }
-        , {"msgYear","Year" }
-        , {"msgMonth","Month" }
-        , {"msgDay","Day" }
-        , {"btnDelete","Delete" }
-
+        ,{"color_0", "gray"}
+        ,{"color_1", "blue"}
+        ,{"color_2", "green"}
+        ,{"color_3", "red"}
+        ,{"color_4", "yellow"}
+        ,{"color_5", "magenta"}
+        ,{"color_6", "brown"}
+        ,{"color_7", "black"}
+        ,{"obj_0", "cubes"}
+        ,{"obj_1", "spheres"}
+        ,{"obj_2", "capsules"}
+        ,{"obj_3", "cylinders"}
+        ,{"obj_4", "pyramids"}
+        ,{"start", "Start"}
+        ,{"next", "Next"}
+        ,{"yes", "Yes"}
+        ,{"not", "No"}
+        ,{"IntroColTest", "Test 3/4. Choose the colors that you like one by one."}
+        ,{"IntroTextTest", "Test 4/4. Answer <Yes> or <No> to {0} questions."}
+        ,{"Res_C", "<b> Your current state:</b>"}
+        ,{"Res_C_S", "Stress Level"}
+        ,{"Res_C_E", "Concentration"}
+        ,{"Res_T", "<b> Your temperament:</b>"}
+        ,{"Phlegmatic", "Phlegmatic on"}
+        ,{"Sanguine", "Sanguine on"}
+        ,{"Melancholic", "Melancholic on"}
+        ,{"Choleric", "Choleric on"}
+        ,{"Power", "Stability"}
+        ,{"btnExit", "Exit"}
+        ,{"btnAbout", "About"}
+        ,{"btnRepeat", "Repeat"}
+        ,{"btnMore", "More ..."}
+        ,{"btnBack", "Return"}
+        ,{"btnNext", "Next"}
+        ,{"btnStart", "Start"}
+        ,{"btnLangSw","Change language" }
+        ,{"msgLangSw","Select language" }
+        ,{"msgAbout", "This program was developed in the project www.ongoza.com as psychological tests transfering to virtual reality."}
+        ,{"btnMale","Male" }
+        ,{"btnFemale","Female" }
+        ,{"btnUnknown","Prefer not to answer" }
+        ,{"msgYear","Year" }
+        ,{"msgMonth","Month" }
+        ,{"msgDay","Day" }
+        ,{"btnDelete","Delete" }
+        ,{"btnDescription","Description" }
+        ,{"dscPhlegmatic", "<b>Phlegmatic ({0}%)</b> - relaxed, peaceful, quiet, and easy-going. They are sympathetic and care about others, yet they try to hide their emotions. Phlegmatic individuals also are good at generalizing ideas or problems to the world and making compromises."}
+        ,{"dscSanguine", "<b>Sanguine ({0}%)</b> - highly talkative, enthusiastic, active, and enjoy being part of a crowd; they find that being social, outgoing, and charismatic is easy to accomplish, have a hard time doing nothing and engage in more risk seeking behaviour."}
+        ,{"dscMelancholic", "<b>Melancholic ({0}%)</b> - analytical and detail-oriented, and they are deep thinkers and feelers, avoid being singled out in a crowd. They often strive for perfection within themselves and their surroundings, which leads to tidy and detail oriented behavior."}
+        ,{"dscCholeric", "<b>Choleric ({0}%)</b> - independent, decisive, and goal-oriented, and ambitious. These combined with their dominant, result-oriented outlook make them natural leaders. In Greek, Medieval and Renaissance thought, they were also violent, vengeful, and short-tempered."}
+        ,{"dscPower", "<b> ({0}%)</b>. It reflects how pronounced the characteristics of temperament are."}
+        ,{"dscStress", "<b>Stress level ({0}%)</b>. Reflects your stress level."}
+        ,{"dscEffi", "<b>Concentration ({0}%)</b>. Reflects your level of concentration."}
+        ,{"btnClose", "Close"}
     };
 
     private static readonly Dictionary<string, string> MessagesSp = new Dictionary<string, string>() {
@@ -144,13 +152,22 @@ public class Data {
         ,{"btnLangSw","Change language" }
         ,{"msgLangSw","Select language" }
         ,{"msgAbout","Este programa se desarrolló en el proyecto www.ongoza.com sobre la transferencia de pruebas psicológicas a la realidad virtual"}
-        , {"btnMale","Masculina" }
-        , {"btnFemale","Hembra" }
-        , {"btnUnknown","Prefiero no responder" }
-        , {"msgYear","Año" }
-        , {"msgMonth","Mes" }
-        , {"msgDay","Día" }
-        , {"btnDelete","Сancelar" }
+        ,{"btnMale","Masculina" }
+        ,{"btnFemale","Hembra" }
+        ,{"btnUnknown","Prefiero no responder" }
+        ,{"msgYear","Año" }
+        ,{"msgMonth","Mes" }
+        ,{"msgDay","Día" }
+        ,{"btnDelete","Сancelar" }
+        ,{"btnDescription","Descripción" }
+        ,{"dscPhlegmatic", "<b>Flemático ({0}):</b> relajado, pacífico, tranquilo y sencillo. Son simpatizantes de sus emociones. Los individuos flemáticos también están interesados en."}
+        ,{"dscSanguine", "<b>Sanguíneo ({0}):</b> muy hablador, entusiasta, activo y disfruta de ser parte de una multitud; encuentran que ser social, extrovertido y carismático es fácil de lograr, les cuesta mucho no hacer nada y se involucran en un comportamiento de búsqueda de riesgos."}
+        ,{"dscMelancholic", "<b>Melancholic ({0}):</b> analítico y orientado a los detalles, y son pensadores y analistas profundos, evitan ser señalados entre la multitud. A menudo luchan por la perfección dentro de sí mismos y en su entorno, lo que conduce a un comportamiento ordenado y orientado a los detalles."}
+        ,{"dscCholeric", "<b>Colérico ({0}):</b> independiente, decisivo, orientado a objetivos y ambicioso. Estos combinados con su perspectiva dominante orientada hacia los resultados los convierten en líderes naturales."}
+        ,{"dscPower", "<b>Pronunciadas ({0}%)</b>. Refleja cuán pronunciadas son las características del temperamento."}
+        ,{"dscStress", "<b>Estrés ({0}%)</b>. Refleja tu nivel de estrés."}
+        ,{"dscEffi", "<b>Concentración ({0}%)</b>. Refleja tu nivel de concentración."}
+        ,{"btnClose", "Apagar"}
     };
 
     private static readonly Dictionary<string, string> MessagesRu = new Dictionary<string, string>() {
@@ -216,6 +233,15 @@ public class Data {
         ,{"msgMonth","Месяц" }
         ,{"msgDay","День" }
         ,{"btnDelete","Удалить" }
+        ,{"btnDescription","Description" }
+        ,{"dscPhlegmatic", "<b>Флегматик ({0})</b> — неспешен, невозмутим, имеет устойчивые стремления и настроение, внешне скуп на проявление эмоций и чувств. Он проявляет упорство и настойчивость в работе, оставаясь спокойным и уравновешенным. В работе он производителен, компенсируя свою неспешность прилежанием."}
+        ,{"dscSanguine", "<b>Сангвиник ({0})</b> — живой, горячий, подвижный человек, с частой сменой впечатлений, с быстрой реакцией на все события, происходящие вокруг него, довольно легко примиряющийся со своими неудачами и неприятностями. Он очень продуктивен в работе, когда ему интересно."}
+        ,{"dscMelancholic", "<b>Меланхолик ({0})</b> — склонный к постоянному переживанию различных событий, он остро реагирует на внешние факторы. Свои переживания он зачастую не может сдерживать усилием воли, он повышено впечатлителен, эмоционально раним."}
+        ,{"dscCholeric", "<b>Холерик ({0})</b> — быстрый, порывистый, с резко меняющимся настроением с эмоциональными вспышками, быстро истощаемый. Холерик обладает огромной работоспособностью, однако, увлекаясь, безалаберно растрачивает свои силы и быстро истощается."}
+        ,{"dscPower", "<b>Стабильность ({0}%)</b>. Отображает насколько ярко выражены характеристики темперамента."}
+        ,{"dscStress", "<b>Стрессс ({0}%)</b>. Отражает уровень вашего стресса."}
+        ,{"dscEffi", "<b>Концентрация ({0}%)</b>. Отражает уровень вашей концентрации."}
+        ,{"btnClose", "Закрыть"}
     };
 
     private static readonly Dictionary<string, string> KeyList = new Dictionary<string, string>() {
