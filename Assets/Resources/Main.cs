@@ -2,24 +2,21 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
-//using System.Collections;
-
-//using System.IO; //save to file
-// Проверить сетевые функции 
-// андроид и аппл
+//using System.IO; //save to file 
 
 public class Main : MonoBehaviour{
     // global variables
-    private int curScene = 11; //  start scene index 
-    private bool isDebug = false; // VR debug enable
-    private bool isNet = false; // network enable
-    private bool isNetFile = false; // save network data to file
-    private bool sendDatafromFile = false; // send data to server from local file
-
-    private bool dataSended = false; //if data already sended to server
-    private float deviceOrientation = 0f; // left or right device headset orientation
     private float[] trackingTime = new float[] { 30f, 0f }; // [0] time in sec while moving are recording for each action, [1] - current timer
-    private bool isTimerShowResult = false; // timer in sec how long user read results [trigger,default,current] before send data to server
+    private float defaultTime = 1f; // time in sec focus on an obj for select
+    private int curScene = 0; //  start scene index 
+    private bool isDebug = false; // VR debug enable
+    private bool isNet = true; // network enable
+    private bool isNetFile = false; // save network data to a local file
+    private bool sendDatafromFile = false; // send data to the server from a local file
+
+    private bool dataSended = false; //if data already sended to the server
+    private float deviceOrientation = 0f; // left or right device headset orientation    
+    private bool isTimerShowResult = false; // timer in sec how long a user read results [trigger,default,current] before send data to server
     private float[] userSceneDataTime = new float[] { 0.0f,0f} ; // [0] timer for scena, [1] timer for action
     private bool trDirect = false; // to control or do not control a user head direction
     public int precisionDec = 100; // number dec after point in movement control 1 - 0, 10-0.0, 100 - 0.00
@@ -29,18 +26,17 @@ public class Main : MonoBehaviour{
     public Text TextInput; // user email   
     public EventSystem SceneEventSystem; // turn on/off eventSystem 
     private bool isActionSave = false;  // trigger for saving user actions
-    private float[] lastAction; // store current action for tracking changes
+    private float[] lastAction; // store a current action for tracking changes
     private GameObject rootObj; // root of objects for group manipulations
-    private GameObject gmArrow; // array for user head direction
+    private GameObject gmArrow; // array for a user head direction
     private Connection connection;   // connection object
     private Text TextDebug; // Debug object
     private UserData userData; // user data
-    //private string userInput = ""; // current user inputs
-    private float defaultTime = 1f; // time in sec focus on an obj for select
+    //private string userInput = ""; // current user inputs    
     private Material timedPointer; // pointer on an active object
-    private string curfocusObj = ""; // current object in focus
-    private string curfocusType = ""; // current object type in focus
-    private int[] curfocusObjCode = new int[11] {-1,0,0,0,0,0,0,0,0,0,0 }; // current object descritption in focus
+    private string curfocusObj = ""; // current object in a focus
+    private string curfocusType = ""; // current object type in a focus
+    private int[] curfocusObjCode = new int[11] {-1,0,0,0,0,0,0,0,0,0,0 }; // a current object descritption in focus
     //curfocusObjCode[0]-  -1 - non avtive object, 0 - active object, >0 - right active object index
     //curfocusObjCode[1]-  (0-4) cur type index of object
     //curfocusObjCode[2]-  (0-7) cur index of selected objects color    
@@ -78,7 +74,7 @@ public class Main : MonoBehaviour{
     private int curQuestionKey; // curent question key 
     private int questionsCount; // total number of questions
     private GameObject txtVR; // animation object in intro
-    private GameObject modalWindow; // modal window object
+    private GameObject modalWindow; // a modal window object
 
     void Start(){
         int checkGyro = 0; trDirect = false;
@@ -340,7 +336,6 @@ public class Main : MonoBehaviour{
             case "Exit": Application.Quit(); break; // exit from app
             case "CloseHelp": if (modalWindow) { GameObject.Destroy(modalWindow); }; rootObj.SetActive(true); break;
             case "ShowHelp":
-                Debug.Log(curfocusObj);
                 rootObj.SetActive(false);
                 if (modalWindow) { GameObject.Destroy(modalWindow); }
                 string[] arrNameHelp = curfocusObj.Split('_');
@@ -374,7 +369,6 @@ public class Main : MonoBehaviour{
                     testData.colorTestResult.energy = Mathf.RoundToInt(100 * (e - 9) / 12);
                     testData.colorTestResult.totalTime = Mathf.RoundToInt(userSceneDataTime[0] * 1000);
                     //Debug.Log("Color test result= " + JsonUtility.ToJson(testData.colorTestResult));
-
                     StartCoroutine(utility.rotateText(rootObj, false, 5, "NextScene", 1));
                 }
                 break;
@@ -389,8 +383,7 @@ public class Main : MonoBehaviour{
                     if (Data.Answers["n"].Contains(curQuestionKey)) { testData.textTestResult.stabil++; }
                 } else {
                     if (Data.Answers["-"].Contains(curQuestionKey)) { testData.textTestResult.extra++; }
-                }
-                //Debug.Log("test result = " + JsonUtility.ToJson(testData.textTestResult));
+                }                
                 if (questionsCount > testData.textTestResult.answers.Count) {
                     StartCoroutine(utility.rotateText(rootObj, false, 5, "NextQuestion", 1));
                 } else {
@@ -437,12 +430,12 @@ public class Main : MonoBehaviour{
                     testData.textTestResult.Value1 = Mathf.RoundToInt(100 * pTypeValue[0]);
                     testData.textTestResult.Name2 = pTypeName[1];
                     testData.textTestResult.Value2 = Mathf.RoundToInt(100 * pTypeValue[1]);
-                    //Debug.Log("item = " + JsonUtility.ToJson(testData.textTestResult));
+                    //Debug.Log("Test result2 = " + JsonUtility.ToJson(testData.textTestResult));
                     isActionSave = false;
                     testData.snenasMotionData.Add(curSnenaMotionData);
                     sendDataToServer();
                     dataSended = true;                    
-                    StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScene", 1));
+                    StartCoroutine(utility.rotateText(rootObj, false, 5, "NextScene", 1));
                 }
                 break;
             case "LangSw": animVR = false; StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScene", -1)); break;
@@ -572,7 +565,7 @@ public class Main : MonoBehaviour{
                 trDirect = true;
                 break;
             case 11: // show results
-                initTable(); // for test only!!
+                //initTable(); // for test only!!
                 rootObj = utility.showResult(userLang, testData.colorTestResult.stress, testData.colorTestResult.energy, testData.textTestResult.Name1, testData.textTestResult.Name2, testData.textTestResult.Value1, testData.textTestResult.Value2, testData.textTestResult.Power);
                 StartCoroutine(utility.rotateText(rootObj, true, 2, "", 0));
                 trDirect = true;
@@ -598,8 +591,8 @@ public class Main : MonoBehaviour{
         testData.textTestResult.extra = 0;
         testData.textTestResult.stabil = 0;
         testData.textTestResult.totalTime = 0;
-        testData.textTestResult.Name1 = "Phlegmatic";
-        testData.textTestResult.Name2 = "Melancholic";
+        testData.textTestResult.Name1 = "";
+        testData.textTestResult.Name2 = "";
         testData.textTestResult.Value1 = 0;
         testData.textTestResult.Value2 = 0;
         testData.textTestResult.Power = 0;
@@ -698,6 +691,15 @@ public class Main : MonoBehaviour{
     private void testConnection(){
         // test connection module with data from a file
         //connection.putDataString("/putTest", "{'test': 'data'}");
+        //string str = "El perro de San Roque no tiene rabo porque Ramón Rodríguez se lo ha robado.";
+        //for (int i = 0; i < 20; i++){
+        //    str += str;
+        //}
+        //byte[] zip = ZlibStream.CompressString(str);
+        //string str2 = System.Text.Encoding.UTF8.GetString(zip);
+        ////using (StreamWriter streamWriter = File.CreateText("c:\\11\\test1.txt")){streamWriter.Write(str);}
+        //using (StreamWriter streamWriter = File.CreateText("c:\\11\\test1.zip")) { streamWriter.Write(str2); }
+        //Debug.Log("successful save data to file");
         connection.putDataBlob("/putVrData", testData);
         //string txtfromfile = "";
         //try { 

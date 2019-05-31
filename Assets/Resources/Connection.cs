@@ -3,6 +3,7 @@ using System.Text;
 using System.Net;
 //using Facebook.Unity;
 using System.Collections.Generic;
+using Ionic.Zlib;
 
 public class Connection{
     private string serverUrl = "";
@@ -56,7 +57,8 @@ public class Connection{
                 Debug.Log("start Upload url=" + uriStr);
                 WebClient client = new WebClient();
                 client.Headers.Add("Content-Type", "application/x-www-form-urlencoded");
-                byte[] byteDocs = Encoding.UTF8.GetBytes(JsonUtility.ToJson(data));
+                //byte[] byteDocs = Encoding.UTF8.GetBytes(JsonUtility.ToJson(data));
+                byte[] byteDocs = ZlibStream.CompressString(JsonUtility.ToJson(data));
                 client.UploadDataCompleted += new UploadDataCompletedEventHandler(UploadBlobResult);
                 client.UploadDataAsync(new System.Uri(uriStr), "POST", byteDocs);
                 
