@@ -9,8 +9,8 @@ public class Data {
 
     private static readonly Dictionary<string, string> connectionData = new Dictionary<string, string>() {
        // { "ServerIP", "127.0.0.1" }
-        { "ServerIP", "192.168.43.253" }
-       // { "ServerIP", "91.212.177.22" }
+       // { "ServerIP", "192.168.43.253" }
+        { "ServerIP", "91.212.177.22" }
         ,{ "ServerPort", "8888" }
     };
 
