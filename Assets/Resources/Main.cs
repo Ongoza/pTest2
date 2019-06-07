@@ -2,9 +2,9 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
-//using System.IO; //save to file 
-// check gyro
-// frame counter for each saved action
+// using System.IO; //save to file
+
+// 
 // records table
 // button "repeat previus test" for each test
 // server php
@@ -20,20 +20,21 @@ public class Main : MonoBehaviour{
     private bool isNet = true; // network enable
     private bool isNetFile = false; // save network data to a local file
     private bool sendDatafromFile = false; // send data to the server from a local file
+    public int precisionDec = 1000; // number dec after point in head movement control saved action: 1 - 0, 10-0.0, 100 - 0.00, 1000 -0.000
 
     private bool dataSended = false; //if data already sended to the server
+    private int actFrmsCnt = 0; // frames counter between user actions;
     private float deviceOrientation = 0f; // left or right device headset orientation    
     private bool isTimerShowResult = false; // timer in sec how long a user read results [trigger,default,current] before send data to server
     private float[] userSceneDataTime = new float[] { 0.0f,0f} ; // [0] timer for scena, [1] timer for action
     private bool trDirect = false; // to control or do not control a user head direction
-    public int precisionDec = 100; // number dec after point in movement control 1 - 0, 10-0.0, 100 - 0.00
     public float baseLoc = 2; //  Y location for menus
     public GameObject camFade; // camera Fade object
     private string userLang = "English"; // default language
     public Text TextInput; // user email   
     public EventSystem SceneEventSystem; // turn on/off eventSystem 
     private bool isActionSave = false;  // trigger for saving user actions
-    private float[] lastAction; // store a current action for tracking changes
+    private int[] lastAction; // store a current action for tracking changes
     private GameObject rootObj; // root of objects for group manipulations
     private GameObject gmArrow; // array for a user head direction
     private Connection connection;   // connection object
@@ -166,36 +167,42 @@ public class Main : MonoBehaviour{
         if(animVR){if (txtVR){txtVR.transform.Rotate(Vector3.back, 1);}}
         userSceneDataTime[0] += Time.deltaTime;
         userSceneDataTime[1] += Time.deltaTime;
-        if(isActionSave) {
+        if(isActionSave) {            
             if(trackingTime[0] > trackingTime[1]){
                 trackingTime[1] += Time.deltaTime;
-                int[] curAction = new int[14]{
-                   Mathf.RoundToInt(Camera.main.transform.eulerAngles.x*precisionDec),
-                   Mathf.RoundToInt(Camera.main.transform.eulerAngles.y*precisionDec),
-                   Mathf.RoundToInt(Camera.main.transform.eulerAngles.z*precisionDec),
-                   curfocusObjCode[0], // right or not                    
-                   curfocusObjCode[1], // cur obj type 
-                   curfocusObjCode[2], // cur obj color
-                   curfocusObjCode[3], // right obj type
-                   curfocusObjCode[4], // right obj color
-                   curfocusObjCode[5],// obj position.x 
-                   curfocusObjCode[6],// obj position.y 
-                   curfocusObjCode[7],// obj position.z 
-                   curfocusObjCode[8],// obj angle.x
-                   curfocusObjCode[9],// obj angle.y
-                   curfocusObjCode[10]// obj angle.z
+                actFrmsCnt++;                
+                int[] curAction = new int[16]{
+                    actFrmsCnt, // frames number from previus action
+                    Mathf.RoundToInt(userSceneDataTime[0] * 1000), // time from scene start
+                    Mathf.RoundToInt(Camera.main.transform.eulerAngles.x*precisionDec), // head direction
+                    Mathf.RoundToInt(Camera.main.transform.eulerAngles.y*precisionDec), // head direction
+                    Mathf.RoundToInt(Camera.main.transform.eulerAngles.z*precisionDec), // head direction
+                    curfocusObjCode[0], // right or not                    
+                    curfocusObjCode[1], // cur obj type 
+                    curfocusObjCode[2], // cur obj color
+                    curfocusObjCode[3], // right obj type
+                    curfocusObjCode[4], // right obj color
+                    curfocusObjCode[5], // obj position.x 
+                    curfocusObjCode[6], // obj position.y 
+                    curfocusObjCode[7], // obj position.z 
+                    curfocusObjCode[8], // obj angle.x
+                    curfocusObjCode[9], // obj angle.y
+                    curfocusObjCode[10] // obj angle.z
                 };
-                bool trNewData = false;
-                for (int i = 0; i < curAction.Length; i++){
+                bool trNewData = false;                
+                for (int i = 2; i < curAction.Length; i++){ // skip time and frame counter
                     if (curAction[i] != lastAction[i]) { trNewData = true; break; }
                 }
-                if (trNewData){
-                    curSnenaMotionData.act.Add(new UserActivity { t = Mathf.RoundToInt(userSceneDataTime[0] * 1000), a = curAction });
-                    for (int i = 0; i < curAction.Length; i++) { lastAction[i] = curAction[i]; }
+                if (trNewData){  
+                    // curSnenaMotionData.act.Add(new int[2]);
+                    curSnenaMotionData.act.Add(new UserActivity{a = curAction });
+                    // Debug.Log(JsonUtility.ToJson(curSnenaMotionData));    
+                    actFrmsCnt = 0;
+                    for (int i = 2; i < curAction.Length; i++) { lastAction[i] = curAction[i]; }
                 }
             } else { isActionSave = false;// limit time actions recording
                // Debug.Log("reach a records time limit "+ trackingTime);               
-            }
+            }            
         }
         if (isTimer){ // display selecting pointer
             //Debug.Log("onUpdate main ");
@@ -459,6 +466,7 @@ public class Main : MonoBehaviour{
             case "Back": StartCoroutine(utility.rotateText(rootObj, false, 2, "NextScene", -1)); break;
             case "Repeat": // repeat all tests
                 initTestData();
+                // curSnenaMotionData = new SnenaMotionData() { i = 0, act = new List<int[]>() };
                 curSnenaMotionData = new SnenaMotionData() { i = 0, act = new List<UserActivity>() };                
                 curScene = 3;
                 dataSended = false;
@@ -486,7 +494,9 @@ public class Main : MonoBehaviour{
         if (!dataSended) {
             if (delta > 0) { testData.snenasMotionData.Add(curSnenaMotionData); }
             curfocusObjCode = new int[11] { -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            curSnenaMotionData = new SnenaMotionData(){i = curScene, act = new List<UserActivity>()};
+            //curSnenaMotionData = new SnenaMotionData(){i = curScene, act = new List<int[]>()};
+            Debug.Log(JsonUtility.ToJson(curSnenaMotionData));
+            curSnenaMotionData = new SnenaMotionData() { i = 0, act = new List<UserActivity>() };
         }
         if (rootObj) { Destroy(rootObj);}
         if (TimerCanvas) { Destroy(TimerCanvas);}
@@ -589,6 +599,7 @@ public class Main : MonoBehaviour{
         userSceneDataTime[1] = 0f;
         trackingTime[1] = 0f;
         SceneEventSystem.enabled = true;
+        actFrmsCnt = 0;
         if (!dataSended) { isActionSave = true; }
     }
 
@@ -636,8 +647,9 @@ public class Main : MonoBehaviour{
             colorTestResult = new ColorTestResult(),
             textTestResult = new TextTestResult()
         };
+        //curSnenaMotionData = new SnenaMotionData() { i = 0, act = new List<int[]>() };
         curSnenaMotionData = new SnenaMotionData() { i = 0, act = new List<UserActivity>() };
-        lastAction = new float[14];
+        lastAction = new int[16];
     }
 
     public void destroy(GameObject gm){ if (gm) { Destroy(gm); }}

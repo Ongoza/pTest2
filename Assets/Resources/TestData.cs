@@ -1,17 +1,5 @@
 ﻿using System.Collections.Generic;
 
-// x - time from start scene
-// userDataList[x][0] - head.rotation.x
-// userDataList[x][1] - head.rotation.y
-// userDataList[x][2] - head.rotation.z
-// userDataList[x][3] - (>0) is ray is inside wrong object 0 - is inside right object, (-1) - is outside object
-// userDataList[x][4] - distance between center of object and a ray
-// userDataList[x][5] - 0-7 color of current object
-// userDataList[x][6] - 0-4 type of current object
-// userDataList[x][7] - 0-7 color of right object
-// userDataList[x][8] - 0-4 type of right object
-// User ations in all (7) scenes
-
 [System.Serializable] public class TestData{
     public string userStartTime;
     public UserData userData;
@@ -25,13 +13,29 @@
 }
 
 [System.Serializable] public class SnenaMotionData{
-    public int i;
-    public List<UserActivity> act;
+    public int i; // scene namber
+    public List<UserActivity> act; // action description
+    // public List<int[]> act;
 }
 
 [System.Serializable] public class UserActivity{
-    public int t;
     public int[] a;
+    // time in msec from start scene
+    // frames number from previus action
+    // head.rotation.x in miliDeg
+    // head.rotation.y in miliDeg
+    // ead.rotation.z in miliDeg
+    // curfocusObjCode[0], // right or not                    
+    // curfocusObjCode[1], // cur obj type 
+    // curfocusObjCode[2], // cur obj color
+    // curfocusObjCode[3], // right obj type
+    // curfocusObjCode[4], // right obj color
+    // curfocusObjCode[5], // obj position.x 
+    // curfocusObjCode[6], // obj position.y 
+    // curfocusObjCode[7], // obj position.z 
+    // curfocusObjCode[8], // obj angle.x
+    // curfocusObjCode[9], // obj angle.y
+    // curfocusObjCode[10] // obj angle.z
 }
 
 [System.Serializable] public class UserData{
