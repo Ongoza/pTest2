@@ -3,6 +3,13 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 //using System.IO; //save to file 
+// check gyro
+// frame counter for each saved action
+// records table
+// button "repeat previus test" for each test
+// server php
+// website
+// save controllers actions
 
 public class Main : MonoBehaviour{
     // global variables
