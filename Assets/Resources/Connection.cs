@@ -11,7 +11,7 @@ public class Connection{
     private bool connEnable = false;
     public string ip = "local";
     public string ipInfo = "";
-    private string lang = "ru";
+    private string lang = "en";
     private List<string> perms = new List<string>() {};
     private Utility utility;
 

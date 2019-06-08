@@ -7,7 +7,6 @@ using UnityEngine.EventSystems;
 // 
 // records table
 // button "repeat previus test" for each test
-// server php
 // website
 // save controllers actions
 
@@ -71,7 +70,7 @@ public class Main : MonoBehaviour{
     private bool isDisplayTimer = false;// display timer during a test
     public float testTime;// test time left
     public Text hintText; //overlay hint text
-    //private Text runText; //overlay runtime data text debug
+    private Text runText; //overlay runtime data text debug
     public GameObject TimerCanvas; // timer object
     private Utility utility;
     private Utility3D utility3D;
@@ -94,7 +93,7 @@ public class Main : MonoBehaviour{
         #endif
 
         GameObject ObjEventSystem = GameObject.Find("GvrEventSystem");
-        //runText = GameObject.Find("run").GetComponent<Text>();
+        runText = GameObject.Find("run").GetComponent<Text>();
         if (ObjEventSystem){
             SceneEventSystem = ObjEventSystem.GetComponent<EventSystem>();
            // if (SceneEventSystem) { SceneEventSystem.enabled = false; }
@@ -138,8 +137,13 @@ public class Main : MonoBehaviour{
             StartCoroutine(utility.FadeScene(1f, true, new Color(0.2f, 0.2f, 0.2f, 1), checkGyro));
         } else {
             //StartCoroutine(utility.PauseInit(7,0));
-            rootObj = utility.ShowMessage(Data.getMessage(userLang, "gyroWarn"), "Next", Data.getMessage(userLang, "btnStart"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
-           // Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = true;
+            if (SceneEventSystem) { SceneEventSystem.enabled = true; }
+            rootObj =  utility.CreateCanvas("rootMenu", new Vector3(0, -2, 4), new Vector2(400, 100));
+            runText.enabled = true;
+            runText.text = Data.getMessage(userLang, "gyroWarn");
+            utility.CreateButton(rootObj.transform, "Start", Data.getMessage(userLang, "btnNext"), "StartGyro", "", new Vector3(0,0,0), new Vector2(200, 60));
+            //rootObj = utility.ShowMessage(Data.getMessage(userLang, "gyroWarn"), "Next", Data.getMessage(userLang, "btnStart"), new Vector2(1200, 400), TextAnchor.MiddleCenter, new Vector2(0, 40));
+            //Camera.main.GetComponent<GvrPointerPhysicsRaycaster>().enabled = true;
             SceneEventSystem.enabled = true;
             curScene = -1;
         }
@@ -472,6 +476,11 @@ public class Main : MonoBehaviour{
                 dataSended = false;
                 NextScene(0);
                 break;
+            case "StartGyro":
+                runText.enabled = false;
+                runText.text ="";
+                NextScene(1);  
+                break;
             default: Debug.Log("clickSelectEvent not found action for " + name); break;
         }
         OnExitTimed();
@@ -631,7 +640,7 @@ public class Main : MonoBehaviour{
                         //Debug.Log("successful save data to file");
                     } catch (System.Exception e) { Debug.Log("Can not save data to a file"); }
                 }
-                connection.putDataBlob("/putVrData", testData);
+                connection.putDataBlob("/1/data.php", testData);
             } else{Debug.Log("No data send to server");}
         }
     }

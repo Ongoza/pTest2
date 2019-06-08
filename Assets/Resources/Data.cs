@@ -11,7 +11,10 @@ public class Data {
        // { "ServerIP", "127.0.0.1" }
        // { "ServerIP", "192.168.43.253" }
         { "ServerIP", "91.212.177.22" }
-        ,{ "ServerPort", "8888" }
+        ,{ "ServerPort", "8008" }
+        //,{ "ServerPort", "8888" }
+        // http://91.212.177.22:8008/1/data.php
+        
     };
 
     private static readonly Dictionary<string, string> listLng = new Dictionary<string, string>(){
